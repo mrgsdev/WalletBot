@@ -2,22 +2,27 @@ import { useEffect } from 'react';
 import type { ThemeMode } from '@budget/shared';
 import { tg } from '../lib/telegram';
 
-/** Применяет тему к документу. «Системная» следует за темой Telegram. */
+/**
+ * Применяет тему к документу. «Системная» следует за темой Telegram.
+ *
+ * Базовая палитра в index.css — светлая (как в редизайне), поэтому в DOM
+ * помечается именно тёмная тема: data-app-theme="dark".
+ */
 export function applyTheme(mode: ThemeMode) {
   const root = document.documentElement;
 
   const effective =
     mode === 'system' ? (tg.available ? tg.colorScheme : preferredScheme()) : mode;
 
-  if (effective === 'light') root.dataset.appTheme = 'light';
+  if (effective === 'dark') root.dataset.appTheme = 'dark';
   else delete root.dataset.appTheme;
 }
 
 function preferredScheme(): 'light' | 'dark' {
   try {
-    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   } catch {
-    return 'dark';
+    return 'light';
   }
 }
 
@@ -35,7 +40,7 @@ export function useTheme(mode: ThemeMode) {
 
     let media: MediaQueryList | null = null;
     try {
-      media = window.matchMedia('(prefers-color-scheme: light)');
+      media = window.matchMedia('(prefers-color-scheme: dark)');
       media.addEventListener('change', sync);
     } catch {
       media = null;

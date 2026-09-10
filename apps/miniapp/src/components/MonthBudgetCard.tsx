@@ -17,14 +17,74 @@ export function MonthBudgetCard({
   data,
   budget,
   isLoading,
+  variant = 'card',
 }: {
   data?: MonthBudgetDto;
   budget?: BudgetDto;
   isLoading: boolean;
+  /** 'tile' — компактная плитка в ряду счетов на главной. */
+  variant?: 'card' | 'tile';
 }) {
   const [open, setOpen] = useState(false);
+  const isTile = variant === 'tile';
 
-  if (isLoading || !data) return <Skeleton className="h-[104px] w-full rounded-3xl" />;
+  if (isLoading || !data) {
+    return (
+      <Skeleton
+        className={isTile ? 'h-[104px] w-[156px] shrink-0 rounded-3xl' : 'h-[104px] w-full rounded-3xl'}
+      />
+    );
+  }
+
+  // Плитка: та же логика и тот же разбор по тапу, но в габаритах счёта.
+  if (isTile) {
+    const tileShare = data.limit === null ? 0 : Math.min(data.usedShare, 100);
+    const tileColor = data.isOverspent ? '#FF6E6E' : tileShare > 80 ? '#FFC94D' : '#7ED97E';
+
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => {
+            tg.haptic.light();
+            setOpen(true);
+          }}
+          className="pressable w-[156px] shrink-0 rounded-3xl bg-elevated p-3.5 text-left"
+        >
+          <div className="flex items-center justify-between">
+            <span className="squircle h-8 w-8 bg-accent/15 text-accent">
+              <Wallet size={16} />
+            </span>
+            <ChevronRight size={15} className="text-muted" />
+          </div>
+
+          <div className="mt-2.5 text-[12px] text-muted">Бюджет</div>
+
+          {data.limit === null ? (
+            <div className="text-[15px] font-semibold leading-tight">Задать лимит</div>
+          ) : (
+            <>
+              <div className="tabular text-[19px] font-bold leading-tight">
+                {formatMoney(data.perDay, data.currency)}
+                <span className="ml-1 text-[11px] font-medium text-muted">в день</span>
+              </div>
+              <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-line">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: tileColor }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${tileShare}%` }}
+                  transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+                />
+              </div>
+            </>
+          )}
+        </button>
+
+        <LimitSheet open={open} onClose={() => setOpen(false)} data={data} budget={budget} />
+      </>
+    );
+  }
 
   // Лимит не задан — предлагаем задать.
   if (data.limit === null) {
@@ -36,7 +96,7 @@ export function MonthBudgetCard({
             tg.haptic.light();
             setOpen(true);
           }}
-          className="pressable flex w-full items-center gap-3 rounded-3xl bg-card p-4 text-left"
+          className="pressable flex w-full items-center gap-3 rounded-3xl bg-elevated p-4 text-left"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
             <Wallet size={20} />
@@ -65,7 +125,7 @@ export function MonthBudgetCard({
           tg.haptic.light();
           setOpen(true);
         }}
-        className="pressable w-full rounded-3xl bg-card p-4 text-left"
+        className="pressable w-full rounded-3xl bg-elevated p-4 text-left"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -78,7 +138,7 @@ export function MonthBudgetCard({
           <ChevronRight size={18} className="mt-1 shrink-0 text-muted" />
         </div>
 
-        <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-elevated">
+        <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-line">
           <motion.div
             className="h-full rounded-full"
             style={{ backgroundColor: barColor }}

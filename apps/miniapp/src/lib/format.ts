@@ -21,6 +21,25 @@ export function formatMoney(value: number, currency: string, alwaysCents = false
   return `${sign}${currencySymbol(currency)}${formatNumber(Math.abs(value), alwaysCents)}`;
 }
 
+/**
+ * Разбирает сумму на части для «крупной» вёрстки из редизайна:
+ * символ валюты рисуется меньше и выше, копейки — приглушённым цветом.
+ */
+export function splitMoney(
+  value: number,
+  currency: string,
+  alwaysCents = false,
+): { sign: string; symbol: string; int: string; cents: string } {
+  const text = formatNumber(Math.abs(value), alwaysCents);
+  const comma = text.lastIndexOf(',');
+  return {
+    sign: value < 0 ? '\u2212' : '',
+    symbol: currencySymbol(currency),
+    int: comma === -1 ? text : text.slice(0, comma),
+    cents: comma === -1 ? '' : text.slice(comma),
+  };
+}
+
 /** Компактная запись для центра диаграммы: «$11,3K». */
 export function formatCompact(value: number, currency: string): string {
   const abs = Math.abs(value);

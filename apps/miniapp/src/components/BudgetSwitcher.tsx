@@ -1,13 +1,18 @@
 import { useState } from 'react';
-import { Check, ChevronDown, Plus, Users } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, Plus, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../lib/queries';
 import { useAppStore } from '../store/app';
 import { Sheet } from './Sheet';
 import { tg } from '../lib/telegram';
 
-/** Переключатель бюджета в шапке главного экрана и статистики. */
-export function BudgetSwitcher() {
+/**
+ * Переключатель бюджета в шапке главного экрана и статистики.
+ *
+ * `variant='pill'` — акцентная фиолетовая пилюля из редизайна: на главной она
+ * стоит рядом с балансом и отвечает на вопрос «чей это баланс».
+ */
+export function BudgetSwitcher({ variant = 'default' }: { variant?: 'default' | 'pill' }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -32,13 +37,27 @@ export function BudgetSwitcher() {
           tg.haptic.light();
           setOpen(true);
         }}
-        className="pressable flex items-center gap-1.5 rounded-full bg-card px-3.5 py-2"
+        className={
+          variant === 'pill'
+            ? 'pressable flex items-center gap-1 rounded-full bg-accent px-3 py-1.5 text-white'
+            : 'pressable flex items-center gap-1.5 rounded-full bg-elevated px-3.5 py-2'
+        }
       >
-        <span className="text-[15px]">{current?.icon ?? '👛'}</span>
-        <span className="max-w-[150px] truncate text-[15px] font-semibold">
+        {variant === 'default' && <span className="text-[15px]">{current?.icon ?? '👛'}</span>}
+        <span
+          className={
+            variant === 'pill'
+              ? 'max-w-[130px] truncate text-[14px] font-semibold'
+              : 'max-w-[150px] truncate text-[15px] font-semibold'
+          }
+        >
           {current?.name ?? 'Бюджет'}
         </span>
-        <ChevronDown size={16} className="text-muted" />
+        {variant === 'pill' ? (
+          <ChevronRight size={15} className="opacity-80" />
+        ) : (
+          <ChevronDown size={16} className="text-muted" />
+        )}
       </button>
 
       <Sheet open={open} onClose={() => setOpen(false)} title="Бюджеты">

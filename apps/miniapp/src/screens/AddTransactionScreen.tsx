@@ -41,6 +41,8 @@ interface Props {
   onClose: () => void;
   /** Передаётся при редактировании существующей операции. */
   editing?: TransactionDto | null;
+  /** Тип, выбранный на полосе быстрых действий главного экрана. */
+  initialType?: TxType;
 }
 
 /**
@@ -48,9 +50,9 @@ interface Props {
  * Сумма набирается калькулятором: над итогом показывается выражение («75 + 50»),
  * под итогом — конвертация, если валюта операции отличается от валюты счёта.
  */
-export function AddTransactionScreen({ open, onClose, editing = null }: Props) {
+export function AddTransactionScreen({ open, onClose, editing = null, initialType = 'expense' }: Props) {
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
-  const [type, setType] = useState<TxType>('expense');
+  const [type, setType] = useState<TxType>(initialType);
   const { data: categories = [] } = useCategories(type === 'income' ? 'income' : 'expense');
 
   const [expression, setExpression] = useState('');
@@ -93,14 +95,14 @@ export function AddTransactionScreen({ open, onClose, editing = null }: Props) {
       return;
     }
 
-    setType('expense');
+    setType(initialType);
     setExpression('');
     setToAccountId(null);
     setCategoryId(null);
     setDate(new Date());
     setComment('');
     setIsRecurring(false);
-  }, [open, editing]);
+  }, [open, editing, initialType]);
 
   // Первый счёт выбирается автоматически, валюта подтягивается из него.
   useEffect(() => {

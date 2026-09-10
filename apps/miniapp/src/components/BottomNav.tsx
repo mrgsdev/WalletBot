@@ -1,8 +1,8 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LayoutGrid, PieChart, Plus, Settings2, Wallet } from 'lucide-react';
+import type { TransactionType } from '@budget/shared';
 import { tg } from '../lib/telegram';
-import { TourTarget } from './Tour';
 
 const ITEMS = [
   { to: '/', label: 'Главная', Icon: LayoutGrid },
@@ -11,34 +11,33 @@ const ITEMS = [
   { to: '/more', label: 'Ещё', Icon: Settings2 },
 ];
 
-/** Нижняя таб-навигация с кнопкой добавления операции по центру. */
-export function BottomNav({ onAdd }: { onAdd: () => void }) {
+/**
+ * Плавающая тёмная пилюля навигации.
+ *
+ * Неактивные вкладки — только иконка, активная разворачивается в подпись:
+ * так бар остаётся узким, но всегда отвечает, где пользователь находится.
+ */
+export function BottomNav({ onAdd }: { onAdd: (type?: TransactionType) => void }) {
   const location = useLocation();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line/50 bg-ink/85 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-md items-center justify-around px-2 pb-[var(--safe-bottom)] pt-2">
-        {ITEMS.slice(0, 2).map((item) => (
+    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[calc(10px+var(--safe-bottom))]">
+      <div className="pointer-events-auto flex items-center gap-1 rounded-full bg-bar p-1.5 shadow-bar">
+        {ITEMS.map((item) => (
           <NavItem key={item.to} {...item} active={location.pathname === item.to} />
         ))}
 
-        <TourTarget id="add-button" className="-mt-6">
-          <button
-            type="button"
-            onClick={() => {
-              tg.haptic.medium();
-              onAdd();
-            }}
-            className="pressable flex h-14 w-14 items-center justify-center rounded-full bg-accent text-black shadow-lg shadow-accent/25"
-            aria-label="Добавить операцию"
-          >
-            <Plus size={26} strokeWidth={2.5} />
-          </button>
-        </TourTarget>
-
-        {ITEMS.slice(2).map((item) => (
-          <NavItem key={item.to} {...item} active={location.pathname === item.to} />
-        ))}
+        <button
+          type="button"
+          onClick={() => {
+            tg.haptic.medium();
+            onAdd('expense');
+          }}
+          className="pressable ml-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white"
+          aria-label="Добавить операцию"
+        >
+          <Plus size={22} strokeWidth={2.6} />
+        </button>
       </div>
     </nav>
   );
@@ -59,16 +58,20 @@ function NavItem({
     <NavLink
       to={to}
       onClick={() => tg.haptic.select()}
-      className="relative flex w-16 flex-col items-center gap-1 py-1"
+      aria-label={label}
+      className={`flex h-11 items-center gap-1.5 rounded-full px-3 text-bar-content transition-colors ${
+        active ? 'bg-white/15' : 'opacity-55'
+      }`}
     >
-      <Icon size={22} className={active ? 'text-content' : 'text-muted'} strokeWidth={active ? 2.3 : 1.8} />
-      <span className={`text-[10px] ${active ? 'text-content' : 'text-muted'}`}>{label}</span>
+      <Icon size={20} strokeWidth={active ? 2.3 : 1.9} />
       {active && (
         <motion.span
-          layoutId="nav-dot"
-          className="absolute -top-0.5 h-1 w-1 rounded-full bg-accent"
-          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-        />
+          initial={{ opacity: 0, width: 0 }}
+          animate={{ opacity: 1, width: 'auto' }}
+          className="overflow-hidden whitespace-nowrap text-[13px] font-semibold"
+        >
+          {label}
+        </motion.span>
       )}
     </NavLink>
   );
