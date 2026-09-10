@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Route, Routes, useLocation } from 'react-router-dom';
-import type { TransactionDto } from '@budget/shared';
+import type { TransactionDto, TransactionType } from '@budget/shared';
 import { BottomNav } from './components/BottomNav';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { TourProvider } from './components/Tour';
@@ -27,6 +27,8 @@ export default function App() {
   const location = useLocation();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<TransactionDto | null>(null);
+  // Полоса быстрых действий на главной открывает ввод сразу нужным типом.
+  const [addType, setAddType] = useState<TransactionType>('expense');
 
   const { data: session, isError, error, refetch } = useSession();
 
@@ -53,8 +55,9 @@ export default function App() {
     }
   }, [session, budgetId, setBudgetId]);
 
-  const openAdd = useCallback(() => {
+  const openAdd = useCallback((type: TransactionType = 'expense') => {
     setEditing(null);
+    setAddType(type);
     setAdding(true);
   }, []);
 
@@ -119,7 +122,7 @@ export default function App() {
               <Route path="/stats" element={<StatsScreen />} />
               <Route path="/summary" element={<SummaryScreen />} />
               <Route path="/history" element={<HistoryScreen onEdit={openEdit} />} />
-              <Route path="/wallet" element={<WalletScreen onTransfer={openAdd} />} />
+              <Route path="/wallet" element={<WalletScreen onTransfer={() => openAdd('transfer')} />} />
               <Route path="/categories" element={<CategoriesScreen />} />
               <Route path="/plans" element={<PlansScreen />} />
               <Route path="/reminders" element={<RemindersScreen />} />
@@ -132,7 +135,7 @@ export default function App() {
 
         {showNav && <BottomNav onAdd={openAdd} />}
 
-        <AddTransactionScreen open={adding} onClose={closeAdd} editing={editing} />
+        <AddTransactionScreen open={adding} onClose={closeAdd} editing={editing} initialType={addType} />
       </div>
     </TourProvider>
   );

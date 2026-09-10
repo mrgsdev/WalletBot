@@ -45,12 +45,12 @@ export const tg = {
   },
 
   get colorScheme(): 'light' | 'dark' {
-    // Вне Telegram (локальная разработка) всегда тёмная тема — она базовая для дизайна.
-    if (!isTelegram()) return 'dark';
+    // Вне Telegram (локальная разработка) — светлая тема: она базовая для дизайна.
+    if (!isTelegram()) return 'light';
     try {
-      return WebApp.colorScheme ?? 'dark';
+      return WebApp.colorScheme ?? 'light';
     } catch {
-      return 'dark';
+      return 'light';
     }
   },
 

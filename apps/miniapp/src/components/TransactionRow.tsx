@@ -1,17 +1,26 @@
 import { ArrowLeftRight } from 'lucide-react';
 import type { TransactionDto } from '@budget/shared';
-import { formatMoney } from '../lib/format';
+import { Money } from './Money';
+import { formatDateLabel } from '../lib/format';
 import { tg } from '../lib/telegram';
 
-/** Строка операции в истории и на главном экране. */
+/**
+ * Строка операции в истории и на главном экране.
+ *
+ * Редизайн: иконка — скруглённый квадрат (читается как иконка приложения),
+ * в подписи появилась дата, копейки в сумме приглушены.
+ */
 export function TransactionRow({
   transaction,
   onClick,
   showAuthor = false,
+  showDate = false,
 }: {
   transaction: TransactionDto;
   onClick?: () => void;
   showAuthor?: boolean;
+  /** На главной дату показываем в строке — там нет заголовков групп по дням. */
+  showDate?: boolean;
 }) {
   const isTransfer = transaction.type === 'transfer';
   const isIncome = transaction.type === 'income';
@@ -25,6 +34,7 @@ export function TransactionRow({
 
   const subtitleParts = [
     isTransfer ? 'Перевод' : transaction.accountName,
+    showDate ? formatDateLabel(transaction.date) : null,
     transaction.comment,
   ].filter(Boolean);
 
@@ -44,14 +54,14 @@ export function TransactionRow({
     >
       <span className="relative shrink-0">
         <span
-          className="flex h-10 w-10 items-center justify-center rounded-full text-[17px]"
+          className="squircle h-11 w-11 text-[19px]"
           style={{
             backgroundColor: isTransfer
               ? 'rgb(var(--c-elevated))'
-              : `${transaction.categoryColor ?? '#8E8E93'}26`,
+              : `${transaction.categoryColor ?? '#8E8E93'}24`,
           }}
         >
-          {isTransfer ? <ArrowLeftRight size={17} className="text-muted" /> : transaction.categoryIcon ?? '🏷'}
+          {isTransfer ? <ArrowLeftRight size={18} className="text-muted" /> : transaction.categoryIcon ?? '🏷'}
         </span>
 
         {author && (
@@ -69,19 +79,23 @@ export function TransactionRow({
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[15px] font-medium">{title}</span>
+        <span className="block truncate text-[15px] font-semibold">{title}</span>
         <span className="block truncate text-[13px] text-muted">{subtitleParts.join(' · ')}</span>
       </span>
 
       <span className="shrink-0 text-right">
-        <span className={`tabular block text-[15px] font-semibold ${amountColor}`}>
-          {sign}
-          {formatMoney(transaction.convertedAmount, transaction.accountCurrency)}
-        </span>
+        <Money
+          value={transaction.convertedAmount}
+          currency={transaction.accountCurrency}
+          sign={sign}
+          className={`block text-[15px] font-semibold ${amountColor}`}
+        />
         {transaction.currency !== transaction.accountCurrency && (
-          <span className="tabular block text-[12px] text-muted">
-            {formatMoney(transaction.amount, transaction.currency)}
-          </span>
+          <Money
+            value={transaction.amount}
+            currency={transaction.currency}
+            className="block text-[12px] text-muted"
+          />
         )}
       </span>
     </button>

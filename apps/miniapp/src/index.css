@@ -2,34 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Палитра редизайна: светлая тема — основная (белые карточки на светло-сером
+ * фоне, тёмная полоса действий между ними), тёмная переопределяет те же токены.
+ */
 :root {
-  /* Тёмная тема по умолчанию — как на референсах. */
-  --c-ink: 0 0 0;
-  --c-surface: 18 18 20;
-  --c-card: 28 28 31;
-  --c-elevated: 42 42 46;
-  --c-line: 47 47 52;
-  --c-content: 255 255 255;
-  --c-muted: 142 142 147;
-  --c-accent: 255 138 0;
+  --c-ink: 240 240 243;      /* фон страницы */
+  --c-surface: 255 255 255;  /* большие белые полотна: шапка и лист операций */
+  --c-card: 255 255 255;     /* карточки */
+  --c-elevated: 244 244 247; /* плитки и чипы внутри карточек */
+  --c-line: 232 232 237;
+  --c-content: 11 11 15;
+  --c-muted: 138 138 147;
+  --c-accent: 108 92 231;    /* фиолетовая пилюля бюджета */
+  --c-bar: 14 14 17;         /* тёмная полоса действий и плавающий таб-бар */
+  --c-bar-content: 255 255 255;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   /* Перезаписывается из Telegram SDK (viewportStableHeight). */
   --tg-viewport-height: 100dvh;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
-:root[data-app-theme='light'] {
-  --c-ink: 242 242 247;
-  --c-surface: 255 255 255;
-  --c-card: 255 255 255;
-  --c-elevated: 240 240 245;
-  --c-line: 224 224 230;
-  --c-content: 17 17 19;
-  --c-muted: 122 122 130;
-  color-scheme: light;
+:root[data-app-theme='dark'] {
+  --c-ink: 8 8 10;
+  --c-surface: 24 24 27;
+  --c-card: 28 28 31;
+  --c-elevated: 42 42 46;
+  --c-line: 47 47 52;
+  --c-content: 255 255 255;
+  --c-muted: 142 142 147;
+  --c-accent: 124 108 246;
+  --c-bar: 0 0 0;
+  --c-bar-content: 255 255 255;
+  color-scheme: dark;
 }
 
 * {
@@ -83,6 +91,19 @@ body {
     @apply overflow-x-auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
+  }
+
+  /*
+   * Иконка-сквиркл вместо круга: в референсе у операций скруглённые квадраты —
+   * они читаются как иконки приложений и лучше держат сетку списка.
+   */
+  .squircle {
+    @apply flex items-center justify-center rounded-[30%];
+  }
+
+  /* Крупная сумма: символ валюты приподнят и уменьшен, копейки приглушены. */
+  .amount-lead {
+    @apply tabular font-bold leading-none tracking-[-0.02em];
   }
 }
 
