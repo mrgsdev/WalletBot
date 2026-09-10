@@ -1,0 +1,268 @@
+// Схема БД бюджет-приложения.
+//
+// Ключевая сущность — Budget. Личный бюджет и семейный различаются только
+// полем kind: это позволяет иметь несколько личных бюджетов, удалять любой
+// из них целиком и приглашать участников в семейные.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BudgetKind {
+  personal
+  family
+}
+
+enum TxType {
+  income
+  expense
+  transfer
+}
+
+enum CategoryType {
+  income
+  expense
+}
+
+enum ThemeMode {
+  system
+  light
+  dark
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  telegramId   String   @unique
+  name         String
+  username     String?
+  avatarUrl    String?
+  languageCode String?
+  createdAt    DateTime @default(now())
+
+  createdBudgets Budget[]           @relation("BudgetCreator")
+  memberships    BudgetMember[]
+  accounts       Account[]
+  transactions   Transaction[]
+  recurring      RecurringPayment[]
+  settings       UserSettings?
+}
+
+/// Настройки пользователя: валюта отчётов, тема, напоминания.
+model UserSettings {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  baseCurrency String    @default("RUB")
+  theme        ThemeMode @default(system)
+
+  /// Ежедневное напоминание внести траты.
+  dailyReminder     Boolean @default(false)
+  dailyReminderTime String  @default("21:00")
+  /// Смещение часового пояса в минутах относительно UTC (например 180 для МСК).
+  tzOffsetMinutes   Int     @default(180)
+  /// Когда последний раз отправляли дневное напоминание — защита от дублей.
+  dailyLastSentAt   DateTime?
+  /// Напоминать всегда, а не только когда за день не было ни одной операции.
+  dailyAlways       Boolean @default(false)
+
+  /// Показанные подсказки-туториалы, чтобы не повторяться.
+  seenTips String[] @default([])
+}
+
+/// Бюджет: личный или семейный. Всё остальное принадлежит бюджету.
+model Budget {
+  id   Int        @id @default(autoincrement())
+  name String
+  kind BudgetKind @default(personal)
+  icon String     @default("👛")
+
+  /// Код приглашения есть только у семейных бюджетов.
+  /// При удалении бюджета запись исчезает, и ссылка перестаёт работать.
+  inviteCode String? @unique
+
+  /// Лимит трат на месяц. null — лимит не задан.
+  monthlyLimit  Float?
+  limitCurrency String @default("RUB")
+  /// Лимит выставлен демо-данными: при их удалении вернём null.
+  demoLimit     Boolean @default(false)
+
+  createdById Int
+  createdBy   User     @relation("BudgetCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  members      BudgetMember[]
+  accounts     Account[]
+  categories   Category[]
+  transactions Transaction[]
+  plans        BudgetPlan[]
+  recurring    RecurringPayment[]
+
+  @@index([createdById])
+}
+
+model BudgetMember {
+  id       Int      @id @default(autoincrement())
+  budgetId Int
+  userId   Int
+  joinedAt DateTime @default(now())
+
+  budget Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([budgetId, userId])
+  @@index([userId])
+}
+
+model Account {
+  id          Int    @id @default(autoincrement())
+  budgetId    Int
+  ownerUserId Int
+  name        String
+  icon        String @default("💳")
+  color       String @default("#6EC1FF")
+  currency    String @default("RUB")
+
+  /// Стартовый остаток на момент заведения счёта.
+  initialBalance Float @default(0)
+  balance        Float @default(0)
+
+  /// В семейном бюджете личный счёт виден только владельцу.
+  isShared   Boolean  @default(true)
+  isArchived Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  budget Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  owner  User   @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  transactions      Transaction[]      @relation("TxAccount")
+  incomingTransfers Transaction[]      @relation("TxToAccount")
+  recurring         RecurringPayment[]
+
+  @@index([budgetId])
+  @@index([ownerUserId])
+}
+
+model Category {
+  id       Int          @id @default(autoincrement())
+  budgetId Int
+  name     String
+  type     CategoryType
+  icon     String       @default("🏷")
+  color    String       @default("#8E8E93")
+  /// Крупная группа («Питание», «Транспорт») — для сводной статистики.
+  group    String?
+
+  isArchived Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  budget Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  transactions Transaction[]
+  plans        BudgetPlan[]
+  recurring    RecurringPayment[]
+
+  @@index([budgetId, type])
+}
+
+model Transaction {
+  id          Int    @id @default(autoincrement())
+  budgetId    Int
+  accountId   Int
+  /// Счёт-получатель, заполняется только для переводов.
+  toAccountId Int?
+  categoryId  Int?
+  userId      Int
+  type        TxType
+
+  /// Сумма в валюте операции.
+  amount   Float
+  currency String
+  /// Сумма в валюте счёта — именно она применяется к балансу.
+  convertedAmount Float
+  /// Для переводов — сумма, зачисленная на счёт-получатель в его валюте.
+  toConvertedAmount Float?
+  rate              Float @default(1)
+
+  date            DateTime
+  comment         String?
+  receiptPhotoUrl String?
+  isRecurring     Boolean  @default(false)
+  /// Операция из демо-набора: создана для обучения и удаляется по запросу.
+  isDemo          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  budget    Budget    @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  account   Account   @relation("TxAccount", fields: [accountId], references: [id], onDelete: Cascade)
+  toAccount Account?  @relation("TxToAccount", fields: [toAccountId], references: [id], onDelete: SetNull)
+  category  Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([budgetId, date])
+  @@index([accountId, date])
+  @@index([categoryId])
+}
+
+model BudgetPlan {
+  id            Int   @id @default(autoincrement())
+  budgetId      Int
+  categoryId    Int
+  year          Int
+  month         Int
+  plannedAmount Float @default(0)
+
+  budget   Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([budgetId, categoryId, year, month])
+  @@index([budgetId, year, month])
+}
+
+/// Регулярный платёж — источник напоминаний от бота.
+model RecurringPayment {
+  id          Int    @id @default(autoincrement())
+  budgetId    Int
+  ownerUserId Int
+  accountId   Int
+  categoryId  Int?
+  title       String
+  amount      Float
+  currency    String
+  type        TxType @default(expense)
+
+  /// День месяца (1–28), в который бот шлёт напоминание.
+  dayOfMonth Int
+  /// Время напоминания в часовом поясе пользователя, «ЧЧ:ММ».
+  notifyTime String    @default("10:00")
+  isActive   Boolean   @default(true)
+  lastNotifiedAt DateTime?
+  createdAt      DateTime  @default(now())
+
+  budget   Budget    @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  owner    User      @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  account  Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([budgetId])
+  @@index([ownerUserId])
+}
+
+/// Суточный кэш курсов валют.
+model ExchangeRate {
+  id        Int      @id @default(autoincrement())
+  base      String
+  quote     String
+  rate      Float
+  date      String
+  fetchedAt DateTime @default(now())
+
+  @@unique([base, quote, date])
+}

@@ -1,0 +1,33 @@
+[Unit]
+Description=Budget Mini App — API
+Documentation=file:/opt/budget/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=budget
+Group=budget
+WorkingDirectory=/opt/budget/apps/api
+# Переменные читает сам процесс из /opt/budget/.env (dotenv поднимается по дереву),
+# поэтому EnvironmentFile не нужен — и кавычки в DATABASE_URL не ломаются.
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=budget-api
+
+# Ограничиваем права: приложению нужен только каталог с данными.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+ReadWritePaths=/var/lib/budget
+
+[Install]
+WantedBy=multi-user.target

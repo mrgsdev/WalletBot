@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Тёмная тема по умолчанию — как на референсах. */
+  --c-ink: 0 0 0;
+  --c-surface: 18 18 20;
+  --c-card: 28 28 31;
+  --c-elevated: 42 42 46;
+  --c-line: 47 47 52;
+  --c-content: 255 255 255;
+  --c-muted: 142 142 147;
+  --c-accent: 255 138 0;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Перезаписывается из Telegram SDK (viewportStableHeight). */
+  --tg-viewport-height: 100dvh;
+
+  color-scheme: dark;
+}
+
+:root[data-app-theme='light'] {
+  --c-ink: 242 242 247;
+  --c-surface: 255 255 255;
+  --c-card: 255 255 255;
+  --c-elevated: 240 240 245;
+  --c-line: 224 224 230;
+  --c-content: 17 17 19;
+  --c-muted: 122 122 130;
+  color-scheme: light;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: rgb(var(--c-ink));
+  color: rgb(var(--c-content));
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', Inter, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* Скрываем скроллбары — приложение должно выглядеть нативным. */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+@layer components {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+
+  .pressable {
+    @apply transition-transform duration-100 active:scale-[0.96];
+  }
+
+  .skeleton {
+    @apply rounded-xl bg-elevated/60;
+    background-image: linear-gradient(
+      90deg,
+      rgb(var(--c-elevated) / 0.4) 0%,
+      rgb(var(--c-elevated) / 0.9) 50%,
+      rgb(var(--c-elevated) / 0.4) 100%
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+
+  .scroll-x {
+    @apply overflow-x-auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
+
+/* Убираем зум при фокусе на инпуте в iOS. */
+input,
+textarea,
+select {
+  font-size: 16px;
+}

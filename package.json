@@ -1,0 +1,33 @@
+{
+  "name": "budget-miniapp",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Telegram Mini App для учёта личных и семейных финансов",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@budget/api & npm run dev --workspace=@budget/miniapp & npm run dev --workspace=@budget/bot",
+    "dev:api": "npm run dev --workspace=@budget/api",
+    "dev:app": "npm run dev --workspace=@budget/miniapp",
+    "dev:bot": "npm run dev --workspace=@budget/bot",
+    "build": "npm run build --workspace=@budget/shared && npm run build --workspace=@budget/api && npm run build --workspace=@budget/miniapp && npm run build --workspace=@budget/bot",
+    "db:push": "npm run db:push --workspace=@budget/api",
+    "db:seed": "npm run db:seed --workspace=@budget/api",
+    "db:studio": "npm run db:studio --workspace=@budget/api",
+    "test": "npm run test --workspace=@budget/api",
+    "typecheck": "npm run typecheck --workspace=@budget/api && npm run typecheck --workspace=@budget/miniapp",
+    "postinstall": "node scripts/build-shared.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "@prisma/client@5.22.0": true,
+    "prisma@5.22.0": true,
+    "@prisma/engines@5.22.0": true,
+    "esbuild@0.28.2": true,
+    "esbuild@0.21.5": true
+  }
+}

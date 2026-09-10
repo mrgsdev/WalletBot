@@ -1,0 +1,30 @@
+[Unit]
+Description=Budget Mini App — Telegram-бот
+After=network-online.target budget-api.service
+Wants=network-online.target
+# Бот ходит в API служебным ключом, поэтому поднимаем его следом.
+Requires=budget-api.service
+
+[Service]
+Type=simple
+User=budget
+Group=budget
+WorkingDirectory=/opt/budget/apps/bot
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=budget-bot
+
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target
