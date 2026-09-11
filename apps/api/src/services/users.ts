@@ -1,4 +1,6 @@
 import { prisma } from '../lib/prisma.js';
+import { env } from '../lib/env.js';
+import { sendMessage } from './telegram-send.js';
 import type { TelegramInitUser } from '../lib/telegram.js';
 import { displayName } from '../lib/telegram.js';
 import { createBudget } from './budgets.js';
@@ -54,4 +56,43 @@ export async function ensureUser(tgUser: TelegramInitUser) {
   });
 
   return user;
+}
+
+/** Экранирование для parse_mode=HTML: имя может содержать <, > или &. */
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Текст уведомления администратору о новом пользователе. */
+export function newUserMessage(user: {
+  name: string;
+  username: string | null;
+  telegramId: string;
+}): string {
+  const lines = [`👤 <b>${escapeHtml(user.name)}</b> начал пользоваться ботом`];
+  lines.push(
+    user.username
+      ? `@${escapeHtml(user.username)} · t.me/${escapeHtml(user.username)}`
+      : `Без username · id ${user.telegramId}`,
+  );
+  return lines.join('\n');
+}
+
+/**
+ * Сообщает администратору о новом пользователе.
+ *
+ * Ошибка отправки не должна ломать регистрацию: человек уже нажал /start,
+ * и если Telegram недоступен, он всё равно должен попасть в приложение.
+ */
+export async function notifyAdminAboutNewUser(user: {
+  name: string;
+  username: string | null;
+  telegramId: string;
+}): Promise<void> {
+  if (!env.adminChatId) return;
+  try {
+    await sendMessage(env.adminChatId, newUserMessage(user));
+  } catch (err) {
+    console.error('[api] уведомление о новом пользователе:', (err as Error).message);
+  }
 }

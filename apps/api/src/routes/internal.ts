@@ -4,7 +4,7 @@ import { ah } from '../lib/asyncHandler.js';
 import { env } from '../lib/env.js';
 import { forbidden } from '../lib/errors.js';
 import { createBudget, inviteLink, joinByCode, listBudgets } from '../services/budgets.js';
-import { ensureUser } from '../services/users.js';
+import { ensureUser, notifyAdminAboutNewUser } from '../services/users.js';
 import { dueRecurring, markDailySent, usersToRemind } from '../services/reminders.js';
 
 export const internalRouter = Router();
@@ -22,6 +22,17 @@ internalRouter.post(
   '/users/ensure',
   ah(async (req, res) => {
     const { telegramId, firstName, lastName, username, photoUrl, languageCode } = req.body ?? {};
+
+    /*
+     * Кто пришёл впервые, проверяем до регистрации: ensureUser возвращает
+     * пользователя одинаково и для нового, и для существующего. Лишний SELECT
+     * не жалко — /start для одного человека случается один раз.
+     */
+    const known = await prisma.user.findUnique({
+      where: { telegramId: String(telegramId) },
+      select: { id: true },
+    });
+
     const user = await ensureUser({
       id: Number(telegramId),
       first_name: firstName,
@@ -30,6 +41,10 @@ internalRouter.post(
       photo_url: photoUrl,
       language_code: languageCode,
     });
+
+    // Не ждём отправку: ответ боту не должен зависеть от доступности Telegram.
+    if (!known) void notifyAdminAboutNewUser(user);
+
     res.json({ id: user.id, name: user.name });
   }),
 );

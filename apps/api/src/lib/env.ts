@@ -39,6 +39,12 @@ export const env = {
   botUsername: (process.env.BOT_USERNAME ?? '').replace(/^@/, ''),
   miniappUrl: process.env.MINIAPP_URL ?? '',
   internalApiKey: process.env.INTERNAL_API_KEY ?? '',
+  /**
+   * Куда слать уведомление о новом пользователе. Числовой chat_id:
+   * по @username Telegram в личку не пишет, это работает только для каналов.
+   * Пусто — уведомления выключены.
+   */
+  adminChatId: process.env.ADMIN_CHAT_ID ?? '',
   exchangeApiBase: process.env.EXCHANGE_API_BASE ?? 'https://api.exchangerate.host',
   /**
    * Куда складывать фото чеков. На сервере это отдельный каталог с данными
