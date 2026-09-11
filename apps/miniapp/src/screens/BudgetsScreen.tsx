@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import type { BudgetDto } from '@budget/shared';
 import familyIcon from '../assets/family.png';
+import joinIcon from '../assets/join.png';
 import personalIcon from '../assets/personal.png';
 import { BUDGET_ICON_KEYS, BudgetIcon } from '../components/BudgetIcon';
 import { Sheet } from '../components/Sheet';
@@ -73,7 +74,8 @@ export function BudgetsScreen() {
               onClick={() => setCreating('family')}
             />
             <ActionRow
-              icon={<Share2 size={18} />}
+              iconBare
+              icon={<img src={joinIcon} alt="" className="h-10 w-10 object-contain" />}
               label="Присоединиться по коду"
               hint="Если вас пригласили в семейный бюджет"
               onClick={() => setJoining(true)}
