@@ -52,6 +52,18 @@ export function CategoriesScreen() {
     return [...map.entries()];
   }, [list]);
 
+  /*
+   * Группы для выбора собираем из активных категорий текущего типа:
+   * в режиме архива `list` содержит только спрятанное, и полный набор
+   * групп по нему не восстановить.
+   */
+  const groups = useMemo(() => {
+    const seen = new Set<string>();
+    for (const category of active.data ?? []) seen.add(category.group ?? 'Прочее');
+    seen.add('Прочее');
+    return [...seen];
+  }, [active.data]);
+
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['categories'] });
   };
@@ -157,6 +169,7 @@ export function CategoriesScreen() {
         open={creating || editing !== null}
         category={editing}
         defaultType={type}
+        groups={groups}
         onClose={() => {
           setCreating(false);
           setEditing(null);
@@ -172,11 +185,14 @@ function CategoryEditor({
   open,
   category,
   defaultType,
+  groups,
   onClose,
 }: {
   open: boolean;
   category: CategoryDto | null;
   defaultType: 'expense' | 'income';
+  /** Группы, в которые можно положить категорию. */
+  groups: string[];
   onClose: () => void;
 }) {
   const save = useSaveCategory();
@@ -185,6 +201,7 @@ function CategoryEditor({
   const [name, setName] = useState('');
   const [icon, setIcon] = useState(ICON_CHOICES[0]);
   const [color, setColor] = useState(CHART_PALETTE[0]);
+  const [group, setGroup] = useState('Прочее');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -195,12 +212,14 @@ function CategoryEditor({
       setName(category.name);
       setIcon(category.icon);
       setColor(category.color);
+      setGroup(category.group ?? 'Прочее');
     } else {
       setName('');
       setIcon(ICON_CHOICES[0]);
       setColor(CHART_PALETTE[0]);
+      setGroup(groups[0] ?? 'Прочее');
     }
-  }, [open, category]);
+  }, [open, category, groups]);
 
   const submit = async () => {
     if (!name.trim()) {
@@ -213,7 +232,8 @@ function CategoryEditor({
         name: name.trim(),
         icon,
         color,
-        ...(category ? {} : { type: defaultType, group: 'Прочее' }),
+        group,
+        ...(category ? {} : { type: defaultType }),
       });
       tg.haptic.success();
       onClose();
@@ -272,6 +292,27 @@ function CategoryEditor({
           placeholder="Название категории"
           className="w-full rounded-2xl bg-elevated px-4 py-3.5 text-[16px] outline-none placeholder:text-muted"
         />
+
+        <div>
+          <div className="mb-2 text-[13px] text-muted">Группа</div>
+          <div className="flex flex-wrap gap-2">
+            {(groups.includes(group) ? groups : [group, ...groups]).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => {
+                  tg.haptic.select();
+                  setGroup(value);
+                }}
+                className={`pressable rounded-full px-3.5 py-2 text-[14px] font-medium ${
+                  group === value ? 'bg-content text-surface' : 'bg-elevated text-muted'
+                }`}
+              >
+                {value}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div>
           <div className="mb-2 text-[13px] text-muted">Иконка</div>
