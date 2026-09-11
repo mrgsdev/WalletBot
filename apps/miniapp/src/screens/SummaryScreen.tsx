@@ -115,10 +115,18 @@ export function SummaryScreen() {
           {/* ---------- Расходы ---------- */}
           <section className="rounded-3xl bg-card p-4">
             <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  tg.haptic.light();
+                  navigate('/expenses', { state: { mode } });
+                }}
+                className="pressable flex items-center gap-2"
+              >
                 <span className="h-2.5 w-2.5 rounded-full bg-[#FF6E8A]" />
                 <span className="text-[16px] font-semibold">Расходы</span>
-              </div>
+                <ChevronRight size={18} className="text-muted" />
+              </button>
               <Segmented
                 size="sm"
                 value={mode}
@@ -138,7 +146,14 @@ export function SummaryScreen() {
                 hint="За выбранный период ещё ничего не записано."
               />
             ) : (
-              <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  tg.haptic.light();
+                  navigate('/expenses', { state: { mode } });
+                }}
+                className="pressable flex w-full items-center gap-3 text-left"
+              >
                 <div className="shrink-0">
                   <DonutChart
                     segments={data.expenseGroups.slice(0, 6).map((g) => ({
@@ -175,7 +190,7 @@ export function SummaryScreen() {
                     </div>
                   )}
                 </div>
-              </div>
+              </button>
             )}
           </section>
 

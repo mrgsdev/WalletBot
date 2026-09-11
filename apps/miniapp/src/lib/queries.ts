@@ -137,7 +137,7 @@ export function useTransactions(filters: TransactionFilters = {}, limit = 40) {
 
 export interface CategoryStatsParams {
   type: 'income' | 'expense';
-  period: 'week' | 'month' | 'quarter';
+  period: 'week' | 'month' | 'quarter' | 'year';
   anchor: string;
   accountId: number | null;
 }
