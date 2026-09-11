@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DonutChart } from '../charts/DonutChart';
 import { pastel, pastelInk } from '../lib/palette';
-import { PieChart } from '../charts/PieChart';
 import { TrendLine } from '../charts/TrendLine';
 import coinSmile from '../assets/coin-smile.png';
 import { AccountIcon } from '../components/AccountIcon';
@@ -15,6 +14,7 @@ import { totalBalance } from '../lib/balance';
 import { fontSizeForLength, formatCompact, formatMoney, formatNumber } from '../lib/format';
 import { useAppStore } from '../store/app';
 import { useStatsAccount } from '../hooks/useStatsAccount';
+import { periodStructure, STRUCTURE_COLORS } from '../lib/structure';
 import { tg } from '../lib/telegram';
 
 /**
@@ -37,6 +37,8 @@ export function SummaryScreen() {
 
   const anchor = useMemo(() => new Date().toISOString(), []);
   const { data, isLoading, isError, error, refetch } = useSummaryStats({ mode, anchor, accountId });
+
+  const structure = periodStructure(data?.income ?? 0, data?.expense ?? 0);
 
   const trend = trendType === 'income' ? data?.incomeTrend ?? [] : data?.expenseTrend ?? [];
   const trendTotal = trend.reduce((sum, point) => sum + point.value, 0);
@@ -179,22 +181,74 @@ export function SummaryScreen() {
 
           {/* ---------- Доход / Расход / Накопления ---------- */}
           <section className="rounded-3xl bg-card p-4">
-            <div className="mb-3 text-[16px] font-semibold">Структура периода</div>
-            <div className="flex items-center gap-4">
-              <PieChart
-                size={116}
-                slices={[
-                  { id: 'income', value: data.income, color: '#D8F24A' },
-                  { id: 'expense', value: data.expense, color: '#FF6E6E' },
-                  { id: 'savings', value: data.savings, color: '#FFA640' },
-                ]}
-              />
-              <div className="flex-1 space-y-2">
-                <LegendRow color={pastel('#D8F24A', 0)} label="Доход" share={data.incomeShare} amount={data.income} currency={data.currency} />
-                <LegendRow color={pastel('#FF6E6E', 1)} label="Расход" share={data.expenseShare} amount={data.expense} currency={data.currency} />
-                <LegendRow color={pastel('#FFA640', 2)} label="Накопления" share={data.savingsShare} amount={data.savings} currency={data.currency} />
+            <button
+              type="button"
+              onClick={() => {
+                tg.haptic.light();
+                navigate('/structure', { state: { mode } });
+              }}
+              className="pressable w-full text-left"
+            >
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="text-[16px] font-semibold">Структура периода</span>
+                <ChevronRight size={18} className="text-muted" />
               </div>
-            </div>
+
+              {data.income === 0 && data.expense === 0 ? (
+                <div className="py-6 text-center text-[14px] text-muted">
+                  За период нет операций
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-center pb-1 pt-1">
+                    <DonutChart
+                      size={148}
+                      thickness={20}
+                      gap={9}
+                      segments={[
+                        { id: 'expense', value: structure.expense, color: STRUCTURE_COLORS.expense },
+                        {
+                          id: 'savings',
+                          value: Math.max(structure.savings, 0),
+                          color: STRUCTURE_COLORS.savings,
+                        },
+                      ]}
+                    >
+                      <div className="tabular text-[24px] font-bold leading-none">
+                        {structure.overspent ? '0%' : `${formatNumber(structure.savingsShare)}%`}
+                      </div>
+                      <div className="mt-1 text-[11px] text-muted">
+                        {structure.overspent ? 'ушло всё' : 'осталось'}
+                      </div>
+                    </DonutChart>
+                  </div>
+
+                  <div className="mt-3 space-y-2.5">
+                    <LegendRow
+                      label="Доход"
+                      share="100%"
+                      amount={data.income}
+                      currency={data.currency}
+                      strong
+                    />
+                    <LegendRow
+                      color={pastel(STRUCTURE_COLORS.expense)}
+                      label="Расход"
+                      share={`${formatNumber(structure.expenseShare)}%`}
+                      amount={data.expense}
+                      currency={data.currency}
+                    />
+                    <LegendRow
+                      color={pastel(STRUCTURE_COLORS.savings)}
+                      label={structure.overspent ? 'Перерасход' : 'Накопления'}
+                      share={structure.overspent ? '' : `${formatNumber(structure.savingsShare)}%`}
+                      amount={Math.abs(structure.savings)}
+                      currency={data.currency}
+                    />
+                  </div>
+                </>
+              )}
+            </button>
           </section>
 
           {/* ---------- Тренд ---------- */}
@@ -271,19 +325,30 @@ function LegendRow({
   share,
   amount,
   currency,
+  strong = false,
 }: {
-  color: string;
+  /** Без цвета строка идёт без точки: так помечен доход, он же основание. */
+  color?: string;
   label: string;
-  share: number;
+  share: string;
   amount: number;
   currency: string;
+  strong?: boolean;
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-      <span className="flex-1 text-[13px]">{label}</span>
-      <span className="tabular text-[13px] text-muted">{formatMoney(amount, currency)}</span>
-      <span className="tabular w-11 text-right text-[13px] font-semibold">{formatNumber(share)}%</span>
+      {color ? (
+        <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+      ) : (
+        <span className="w-2 shrink-0" />
+      )}
+      <span className={`min-w-0 flex-1 truncate text-[14px] ${strong ? 'font-semibold' : ''}`}>
+        {label}
+      </span>
+      <span className={`tabular text-[14px] ${strong ? 'font-semibold' : 'text-muted'}`}>
+        {formatMoney(amount, currency)}
+      </span>
+      <span className="tabular w-14 shrink-0 text-right text-[14px] font-semibold">{share}</span>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronRight, Moon,
@@ -16,7 +16,7 @@ import currencyIcon from '../assets/currency.png';
 import membersIcon from '../assets/members.png';
 import { Sheet } from '../components/Sheet';
 import { Segmented } from '../components/Segmented';
-import { Wheel, WheelGroup, type WheelOption } from '../components/Wheel';
+import { PeriodRow, PeriodSheet } from '../components/PeriodSheet';
 import { TOUR, TourTarget, useTour } from '../components/Tour';
 import { Skeleton } from '../components/ui';
 import { BudgetSwitcher } from '../components/BudgetSwitcher';
@@ -284,22 +284,15 @@ function ExportSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
             />
           </div>
 
-          <button
-            type="button"
+          <PeriodRow
+            label={mode === 'year' ? 'Выбрать год' : 'Выбрать месяц'}
+            value={mode === 'year' ? String(year) : `${MONTHS_NOM[month - 1]} ${year}`}
+            right={<ChevronRight size={17} className="text-muted" />}
             onClick={() => {
               tg.haptic.light();
               setPeriodOpen(true);
             }}
-            className="pressable flex w-full items-center justify-between rounded-2xl bg-elevated px-4 py-3.5 text-left"
-          >
-            <span className="text-[15px] text-muted">
-              {mode === 'year' ? 'Выбрать год' : 'Выбрать месяц'}
-            </span>
-            <span className="flex items-center gap-1 text-[16px] font-medium">
-              {mode === 'year' ? year : `${MONTHS_NOM[month - 1]} ${year}`}
-              <ChevronRight size={17} className="text-muted" />
-            </span>
-          </button>
+          />
 
           <div className="rounded-2xl bg-elevated/50 p-3.5 text-[13px] leading-snug text-muted">
             Файл придёт сообщением от бота: в приложении Telegram скачивание работает ненадёжно.{' '}
@@ -340,70 +333,6 @@ function ExportSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
         onYear={setYear}
       />
     </>
-  );
-}
-
-/** Барабан выбора периода — как нативный пикер даты. */
-function PeriodSheet({
-  open,
-  onClose,
-  withMonth,
-  month,
-  year,
-  onMonth,
-  onYear,
-}: {
-  open: boolean;
-  onClose: () => void;
-  withMonth: boolean;
-  month: number;
-  year: number;
-  onMonth: (month: number) => void;
-  onYear: (year: number) => void;
-}) {
-  const months: WheelOption<number>[] = useMemo(
-    () => MONTHS_NOM.map((name, index) => ({ value: index + 1, label: name })),
-    [],
-  );
-
-  /* Пять прошлых лет и следующий — дальше выгружать нечего. */
-  const years: WheelOption<number>[] = useMemo(() => {
-    const current = new Date().getFullYear();
-    return Array.from({ length: 7 }, (_, i) => current - 5 + i).map((value) => ({
-      value,
-      label: String(value),
-    }));
-  }, []);
-
-  return (
-    <Sheet
-      open={open}
-      onClose={onClose}
-      title={withMonth ? 'Месяц и год' : 'Год'}
-      dragToClose={false}
-    >
-      <div className="space-y-3 pt-1">
-        <WheelGroup>
-          {withMonth && (
-            <Wheel options={months} value={month} onChange={onMonth} className="flex-[3]" />
-          )}
-          <Wheel
-            options={years}
-            value={year}
-            onChange={onYear}
-            className={withMonth ? 'flex-[2]' : 'flex-1'}
-          />
-        </WheelGroup>
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="pressable w-full rounded-2xl bg-content px-4 py-3.5 text-[16px] font-semibold text-ink"
-        >
-          Готово
-        </button>
-      </div>
-    </Sheet>
   );
 }
 

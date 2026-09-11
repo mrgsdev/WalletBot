@@ -14,6 +14,7 @@ import { MoreScreen } from './screens/MoreScreen';
 import { PlansScreen } from './screens/PlansScreen';
 import { RemindersScreen } from './screens/RemindersScreen';
 import { StatsScreen } from './screens/StatsScreen';
+import { StructureScreen } from './screens/StructureScreen';
 import { SummaryScreen } from './screens/SummaryScreen';
 import { WalletScreen } from './screens/WalletScreen';
 import { useSession } from './lib/queries';
@@ -121,6 +122,7 @@ export default function App() {
               <Route path="/" element={<HomeScreen onAdd={openAdd} onEdit={openEdit} />} />
               <Route path="/stats" element={<StatsScreen />} />
               <Route path="/summary" element={<SummaryScreen />} />
+              <Route path="/structure" element={<StructureScreen />} />
               <Route path="/history" element={<HistoryScreen onEdit={openEdit} />} />
               <Route path="/wallet" element={<WalletScreen onTransfer={() => openAdd('transfer')} />} />
               <Route path="/categories" element={<CategoriesScreen />} />
