@@ -46,9 +46,58 @@ export function formatCompact(value: number, currency: string): string {
   const symbol = currencySymbol(currency);
   const sign = value < 0 ? '−' : '';
 
-  if (abs >= 1_000_000) return `${sign}${symbol}${(abs / 1_000_000).toFixed(1).replace('.', ',')}M`;
-  if (abs >= 10_000) return `${sign}${symbol}${(abs / 1000).toFixed(1).replace('.', ',')}K`;
+  /*
+   * Разряды доходим до триллионов: раньше всё, что больше миллиона,
+   * делилось на 1e6, и 50 трлн превращались в «50000000,1M» — строку
+   * длиннее исходной, которая вылезала за центр кольца.
+   */
+  // Порог и делитель различаются: тысячи сокращаем только с 10 000,
+  // иначе «5 000» превратилось бы в «5K» и стало бы длиннее исходного.
+  const steps: { from: number; unit: number; suffix: string }[] = [
+    { from: 1e12, unit: 1e12, suffix: 'T' },
+    { from: 1e9, unit: 1e9, suffix: 'B' },
+    { from: 1e6, unit: 1e6, suffix: 'M' },
+    { from: 1e4, unit: 1e3, suffix: 'K' },
+  ];
+
+  for (const { from, unit, suffix } of steps) {
+    if (abs >= from) {
+      const short = (abs / unit).toFixed(1).replace(/\.0$/, '').replace('.', ',');
+      return `${sign}${symbol}${short}${suffix}`;
+    }
+  }
+
   return `${sign}${symbol}${formatNumber(abs)}`;
+}
+
+/**
+ * Полная запись, пока помещается; дальше — компактная.
+ *
+ * Для второстепенных строк, где уменьшать шрифт некуда: обрезать деньги
+ * нельзя (теряются разряды), а «₽50,0T» читается и влезает.
+ */
+export function formatMoneyFit(value: number, currency: string, maxChars: number): string {
+  const full = formatMoney(value, currency);
+  return full.length <= maxChars ? full : formatCompact(value, currency);
+}
+
+/**
+ * Кегль под длину строки.
+ *
+ * У крупных сумм ширина не ограничена данными: баланс в 50 трлн длиннее
+ * обычного втрое и уезжает за край. Обрезать деньги нельзя — теряются
+ * разряды, поэтому уменьшаем шрифт, пока строка не поместится.
+ *
+ * `fitsUpTo` — сколько знаков помещается в отведённую ширину при базовом кегле.
+ */
+export function fontSizeForLength(
+  text: string,
+  base: number,
+  fitsUpTo: number,
+  min = 14,
+): number {
+  if (text.length <= fitsUpTo) return base;
+  return Math.max(min, Math.round((base * fitsUpTo) / text.length));
 }
 
 const MONTHS_GEN = [

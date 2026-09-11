@@ -35,7 +35,7 @@ export function Money({
   const prefix = sign ?? parts.sign;
 
   return (
-    <span className={`tabular ${className}`}>
+    <span className={`tabular whitespace-nowrap ${className}`}>
       {prefix}
       {symbolSide === 'left' && parts.symbol}
       {parts.int}

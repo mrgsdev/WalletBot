@@ -5,7 +5,7 @@ import type { BudgetDto, MonthBudgetDto } from '@budget/shared';
 import walletIcon from '../assets/wallet.png';
 import { Sheet } from './Sheet';
 import { Skeleton } from './ui';
-import { formatMoney, MONTHS_NOM } from '../lib/format';
+import { fontSizeForLength, formatMoney, MONTHS_NOM } from '../lib/format';
 import { useBudgetMutations } from '../lib/queries';
 import { tg } from '../lib/telegram';
 
@@ -63,9 +63,14 @@ export function MonthBudgetCard({
             <div className="text-[15px] font-semibold leading-tight">Задать лимит</div>
           ) : (
             <>
-              <div className="tabular text-[19px] font-bold leading-tight">
+              <div
+                className="tabular font-bold leading-tight"
+                style={{
+                  fontSize: fontSizeForLength(formatMoney(data.perDay, data.currency), 19, 9, 11),
+                }}
+              >
                 {formatMoney(data.perDay, data.currency)}
-                <span className="ml-1 text-[11px] font-medium text-muted">в день</span>
+                <span className="ml-1 text-[0.58em] font-medium text-muted">в день</span>
               </div>
               <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-line">
                 <motion.div

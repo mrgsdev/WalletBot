@@ -10,7 +10,7 @@ import { TourTarget } from '../components/Tour';
 import { groupByCurrency } from '../components/CurrencyBreakdown';
 import { useAccounts, useDeleteAccount, useRates, useSaveAccount, useSession } from '../lib/queries';
 import { totalBalance } from '../lib/balance';
-import { formatMoney } from '../lib/format';
+import { fontSizeForLength, formatMoney } from '../lib/format';
 import { useIsFamilyBudget } from '../hooks/useCurrentBudget';
 import { useMainButton } from '../hooks/useMainButton';
 import { tg } from '../lib/telegram';
@@ -57,7 +57,13 @@ export function WalletScreen({ onTransfer }: { onTransfer: () => void }) {
 
       <TourTarget id="wallet-total" className="px-5 pb-4 pt-2">
         <div className="text-[13px] text-muted">Всего на счетах</div>
-        <div className="tabular text-[34px] font-bold leading-tight">
+        <div
+          className="tabular font-bold leading-tight"
+          /* Кегль под длину: крупный итог иначе уезжает за край. */
+          style={{
+            fontSize: fontSizeForLength(formatMoney(total, baseCurrency, true), 34, 15, 18),
+          }}
+        >
           {formatMoney(total, baseCurrency, true)}
         </div>
       </TourTarget>

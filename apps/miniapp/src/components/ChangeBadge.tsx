@@ -33,7 +33,19 @@ export function ChangeBadge({
   return (
     <span className={`tabular inline-flex items-center gap-0.5 font-medium ${color} ${text}`}>
       <Icon size={icon} strokeWidth={2.5} />
-      {flat ? 'без изменений' : `${Math.abs(rounded)}%`}
+      {flat ? 'без изменений' : formatPercent(Math.abs(rounded))}
     </span>
   );
+}
+
+/**
+ * Потолок для процентов.
+ *
+ * При пустом прошлом периоде рост считается от почти нуля и даёт
+ * значения вроде 40 597 596 606 % — такая строка ломает строку списка,
+ * а смысла в точной цифре нет: это просто «очень много».
+ */
+function formatPercent(value: number): string {
+  if (value > 999) return '>999%';
+  return `${value}%`;
 }

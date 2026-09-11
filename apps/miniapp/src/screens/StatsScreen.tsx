@@ -13,7 +13,7 @@ import { BudgetSwitcher } from '../components/BudgetSwitcher';
 import { Sheet } from '../components/Sheet';
 import { EmptyState, ErrorState, Skeleton } from '../components/ui';
 import { useAccounts, useCategoryStats } from '../lib/queries';
-import { formatCompact, formatMoney } from '../lib/format';
+import { fontSizeForLength, formatMoneyFit, formatCompact, formatMoney } from '../lib/format';
 import { buildPeriodTabs, type PeriodKind } from '../lib/periods';
 import { useAppStore } from '../store/app';
 import { useStatsAccount } from '../hooks/useStatsAccount';
@@ -203,7 +203,17 @@ export function StatsScreen() {
                         emojiClassName="text-[28px]"
                       />
                     </div>
-                    <div className="tabular text-[26px] font-bold leading-tight">
+                    <div
+                      className="tabular font-bold leading-tight"
+                      style={{
+                        fontSize: fontSizeForLength(
+                          formatCompact(highlighted.amount, data!.currency),
+                          26,
+                          9,
+                          16,
+                        ),
+                      }}
+                    >
                       {formatCompact(highlighted.amount, data!.currency)}
                     </div>
                     <div className="line-clamp-2 text-[12px] text-muted">{highlighted.name}</div>
@@ -213,7 +223,18 @@ export function StatsScreen() {
                   </>
                 ) : (
                   <>
-                    <div className="tabular text-[36px] font-bold leading-none tracking-[-0.02em]">
+                    <div
+                      className="tabular font-bold leading-none tracking-[-0.02em]"
+                      /* Внутренний диаметр кольца фиксирован — подгоняем кегль. */
+                      style={{
+                        fontSize: fontSizeForLength(
+                          formatCompact(data!.total, data!.currency),
+                          36,
+                          8,
+                          20,
+                        ),
+                      }}
+                    >
                       {formatCompact(data!.total, data!.currency)}
                     </div>
                     <div className="mt-1.5 text-[13px] text-muted">
@@ -255,7 +276,7 @@ export function StatsScreen() {
                   <span className="min-w-0 flex-1 truncate text-[13.5px]">{item.name}</span>
                   <span className="shrink-0 text-right">
                     <span className="tabular block text-[13.5px] font-medium">
-                      {formatMoney(item.amount, data!.currency)}
+                      {formatMoneyFit(item.amount, data!.currency, 13)}
                     </span>
                     <ChangeBadge percent={item.changePercent} type={type} />
                   </span>

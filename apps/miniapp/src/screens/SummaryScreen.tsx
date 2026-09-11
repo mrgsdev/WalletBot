@@ -12,7 +12,7 @@ import { Segmented } from '../components/Segmented';
 import { EmptyState, ErrorState, Skeleton } from '../components/ui';
 import { useAccounts, useRates, useSession, useSummaryStats } from '../lib/queries';
 import { totalBalance } from '../lib/balance';
-import { formatCompact, formatMoney, formatNumber } from '../lib/format';
+import { fontSizeForLength, formatCompact, formatMoney, formatNumber } from '../lib/format';
 import { useAppStore } from '../store/app';
 import { useStatsAccount } from '../hooks/useStatsAccount';
 import { tg } from '../lib/telegram';
@@ -328,7 +328,13 @@ function AccountCard({
       </div>
 
       <div className="mt-5">
-        <div className="tabular text-[24px] font-bold leading-tight">
+        <div
+          className="tabular font-bold leading-tight"
+          /* Карточка фиксированной ширины (248px) — кегль под длину суммы. */
+          style={{
+            fontSize: fontSizeForLength(formatMoney(amount, currency, true), 24, 14, 13),
+          }}
+        >
           {formatMoney(amount, currency, true)}
         </div>
         <div className="mt-0.5 truncate text-[14px] font-medium">{title}</div>

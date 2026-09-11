@@ -17,7 +17,7 @@ import { useAppStore } from '../store/app';
 import { useIsFamilyBudget } from '../hooks/useCurrentBudget';
 import { totalBalance } from '../lib/balance';
 import { APP_NAME } from '../lib/appName';
-import { formatMoney, MONTHS_NOM } from '../lib/format';
+import { fontSizeForLength, formatMoney, formatMoneyFit, MONTHS_NOM } from '../lib/format';
 import { tg } from '../lib/telegram';
 
 /** Фильтры над списком операций — пилюли из референса. */
@@ -94,13 +94,10 @@ export function HomeScreen({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               className="mt-1.5"
+              /* Кегль зависит от длины: 50 трлн иначе уезжают за край экрана. */
+              style={{ fontSize: fontSizeForLength(formatMoney(total, baseCurrency, true), 42, 13, 22) }}
             >
-              <Money
-                value={total}
-                currency={baseCurrency}
-                alwaysCents
-                className="amount-lead text-[42px]"
-              />
+              <Money value={total} currency={baseCurrency} alwaysCents className="amount-lead" />
             </motion.div>
           )}
 
@@ -122,13 +119,13 @@ export function HomeScreen({
               <span className="flex items-center gap-1 text-positive">
                 <ArrowDownLeft size={13} />
                 <span className="tabular font-medium">
-                  {summary ? formatMoney(summary.income, summary.currency) : '—'}
+                  {summary ? formatMoneyFit(summary.income, summary.currency, 12) : '—'}
                 </span>
               </span>
               <span className="flex items-center gap-1 text-negative">
                 <ArrowUpRight size={13} />
                 <span className="tabular font-medium">
-                  {summary ? formatMoney(summary.expense, summary.currency) : '—'}
+                  {summary ? formatMoneyFit(summary.expense, summary.currency, 12) : '—'}
                 </span>
               </span>
               <ChevronRight size={14} className="text-muted" />
@@ -172,11 +169,22 @@ export function HomeScreen({
 
                     <div className="mt-2.5 truncate text-[12px] text-muted">{account.name}</div>
 
-                    <Money
-                      value={account.balance}
-                      currency={account.currency}
-                      className="block text-[19px] font-bold leading-tight"
-                    />
+                    {/*
+                      Плитка шириной 156px: сначала сокращаем запись, потом кегль.
+                      Уменьшать шрифт до нечитаемого ради всех разрядов хуже,
+                      чем показать «−₽100T» — точная сумма есть в кошельке.
+                    */}
+                    {(() => {
+                      const text = formatMoneyFit(account.balance, account.currency, 14);
+                      return (
+                        <span
+                          className="tabular block font-bold leading-tight"
+                          style={{ fontSize: fontSizeForLength(text, 19, 11, 10) }}
+                        >
+                          {text}
+                        </span>
+                      );
+                    })()}
                   </button>
                 ))}
 
