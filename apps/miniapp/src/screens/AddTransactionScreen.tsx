@@ -211,7 +211,7 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
   };
 
   const symbol = currencySymbol(currency);
-  const displayAmount = expression === '' ? '0' : formatNumber(amount);
+  const displayAmount = formatEntry(expression, amount);
 
   return (
     /*
@@ -657,4 +657,25 @@ function ExtraSheet({
 
 function flagOf(code: string): string {
   return CURRENCY_BY_CODE[code]?.flag ?? '🏳️';
+}
+
+/**
+ * Сумма на экране ввода.
+ *
+ * Пока набирается дробная часть, показываем её так, как её печатают:
+ * иначе запятая и нули после неё теряются при форматировании — человек
+ * жмёт «,» и видит прежнее число, будто кнопка не сработала.
+ * Как только в выражении появляется оператор, показываем результат.
+ */
+function formatEntry(expression: string, amount: number): string {
+  if (expression === '') return '0';
+  if (hasOperator(expression)) return formatNumber(amount);
+
+  const dot = expression.indexOf('.');
+  if (dot === -1) return formatNumber(amount);
+
+  const whole = Number(expression.slice(0, dot));
+  if (!Number.isFinite(whole)) return formatNumber(amount);
+
+  return `${formatNumber(whole)},${expression.slice(dot + 1)}`;
 }

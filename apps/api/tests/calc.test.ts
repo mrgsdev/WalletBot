@@ -88,3 +88,21 @@ describe('formatExpression', () => {
     expect(formatExpression('12.5*2')).toBe('12,5 × 2');
   });
 });
+
+describe('pushToken: копейки', () => {
+  it('не даёт набрать больше двух знаков после запятой', () => {
+    let expr = '';
+    for (const t of ['5', ',', '9', '9', '9']) expr = pushToken(expr, t);
+    expect(expr).toBe('5.99');
+  });
+
+  it('ограничение действует для каждого числа в выражении', () => {
+    let expr = '';
+    for (const t of ['1', ',', '2', '3', '4', '+', '5', ',', '6', '7', '8']) expr = pushToken(expr, t);
+    expect(expr).toBe('1.23+5.67');
+  });
+
+  it('запятая в пустом поле даёт «0,» — человек видит, что перешёл к копейкам', () => {
+    expect(pushToken('', ',')).toBe('0.');
+  });
+});

@@ -114,9 +114,17 @@ export function pushToken(expression: string, token: string): string {
     return expression + (lastNumber === '' ? '0.' : '.');
   }
 
-  // Не даём набирать «007».
   const lastNumber = expression.split(/[+\-*/]/).pop() ?? '';
-  if (lastNumber === '0' && normalized !== '.') return expression.slice(0, -1) + normalized;
+
+  /*
+   * Больше двух знаков после запятой набрать нельзя: сумма всё равно
+   * округлится при сохранении, и на экране получилось бы одно, а в базе другое.
+   */
+  const dot = lastNumber.indexOf('.');
+  if (dot !== -1 && lastNumber.length - dot - 1 >= 2) return expression;
+
+  // Не даём набирать «007».
+  if (lastNumber === '0') return expression.slice(0, -1) + normalized;
 
   return expression + normalized;
 }
