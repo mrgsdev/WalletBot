@@ -3,6 +3,7 @@ import { Check, ChevronDown, ChevronRight, Plus, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../lib/queries';
 import { useAppStore } from '../store/app';
+import { BudgetIcon } from './BudgetIcon';
 import { Sheet } from './Sheet';
 import { tg } from '../lib/telegram';
 
@@ -43,7 +44,9 @@ export function BudgetSwitcher({ variant = 'default' }: { variant?: 'default' | 
             : 'pressable flex items-center gap-1.5 rounded-full bg-elevated px-3.5 py-2'
         }
       >
-        {variant === 'default' && <span className="text-[15px]">{current?.icon ?? '👛'}</span>}
+        {variant === 'default' && (
+          <BudgetIcon icon={current?.icon ?? '👛'} className="h-6 w-6" emojiClassName="text-[15px]" />
+        )}
         <span
           className={
             variant === 'pill'
@@ -69,9 +72,7 @@ export function BudgetSwitcher({ variant = 'default' }: { variant?: 'default' | 
               onClick={() => choose(budget.id)}
               className="flex w-full items-center gap-3 py-3 text-left"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-elevated text-[18px]">
-                {budget.icon}
-              </span>
+              <BudgetIcon icon={budget.icon} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] font-medium">{budget.name}</span>
                 <span className="flex items-center gap-1 text-[13px] text-muted">

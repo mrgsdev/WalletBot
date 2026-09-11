@@ -4,6 +4,8 @@ import {
   ArrowLeft, Crown, LogOut, Plus, RefreshCw, Share2, Trash2, UserMinus, Users, Wallet,
 } from 'lucide-react';
 import type { BudgetDto } from '@budget/shared';
+import familyIcon from '../assets/family.png';
+import { BUDGET_ICON_KEYS, BudgetIcon } from '../components/BudgetIcon';
 import { Sheet } from '../components/Sheet';
 import { Skeleton } from '../components/ui';
 import { useBudgetMutations, useSession } from '../lib/queries';
@@ -16,9 +18,15 @@ export function BudgetsScreen() {
   const { data: session, isLoading } = useSession();
   const [creating, setCreating] = useState<'personal' | 'family' | null>(null);
   const [joining, setJoining] = useState(false);
-  const [details, setDetails] = useState<BudgetDto | null>(null);
+  /*
+   * Храним id, а не сам бюджет: объект в состоянии остался бы снимком на момент
+   * открытия, и обновление кода приглашения (как и смена иконки) не отражалось бы
+   * в уже открытом окне. По id всегда берём свежую версию из сессии.
+   */
+  const [detailsId, setDetailsId] = useState<number | null>(null);
 
   const budgets = session?.budgets ?? [];
+  const details = budgets.find((b) => b.id === detailsId) ?? null;
   const personal = budgets.filter((b) => b.kind === 'personal');
   const family = budgets.filter((b) => b.kind === 'family');
 
@@ -45,8 +53,8 @@ export function BudgetsScreen() {
         </div>
       ) : (
         <div className="space-y-5 px-4">
-          <Section title="Личные" items={personal} onOpen={setDetails} />
-          <Section title="Семейные" items={family} onOpen={setDetails} />
+          <Section title="Личные" items={personal} onOpen={(b) => setDetailsId(b.id)} />
+          <Section title="Семейные" items={family} onOpen={(b) => setDetailsId(b.id)} />
 
           <div className="space-y-2">
             <ActionRow
@@ -56,7 +64,8 @@ export function BudgetsScreen() {
               onClick={() => setCreating('personal')}
             />
             <ActionRow
-              icon={<Users size={18} />}
+              iconBare
+              icon={<img src={familyIcon} alt="" className="h-10 w-10 object-contain" />}
               label="Создать семейный бюджет"
               hint="Общие счета и операции с близкими"
               onClick={() => setCreating('family')}
@@ -73,7 +82,7 @@ export function BudgetsScreen() {
 
       <CreateSheet kind={creating} onClose={() => setCreating(null)} />
       <JoinSheet open={joining} onClose={() => setJoining(false)} />
-      <DetailsSheet budget={details} onClose={() => setDetails(null)} />
+      <DetailsSheet budget={details} onClose={() => setDetailsId(null)} />
     </div>
   );
 }
@@ -105,9 +114,7 @@ function Section({
               }}
               className="flex w-full items-center gap-3 px-4 py-3 text-left"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-elevated text-[18px]">
-                {budget.icon}
-              </span>
+              <BudgetIcon icon={budget.icon} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5">
                   <span className="truncate text-[15px] font-medium">{budget.name}</span>
@@ -132,11 +139,14 @@ function ActionRow({
   label,
   hint,
   onClick,
+  iconBare = false,
 }: {
   icon: React.ReactNode;
   label: string;
   hint: string;
   onClick: () => void;
+  /** Иконка сама себе картинка — рисуем без кружка-подложки. */
+  iconBare?: boolean;
 }) {
   return (
     <button
@@ -147,9 +157,13 @@ function ActionRow({
       }}
       className="pressable flex w-full items-center gap-3 rounded-2xl bg-card px-4 py-3 text-left"
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-elevated text-muted">
-        {icon}
-      </span>
+      {iconBare ? (
+        <span className="shrink-0">{icon}</span>
+      ) : (
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-elevated text-muted">
+          {icon}
+        </span>
+      )}
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-medium">{label}</span>
         <span className="block truncate text-[13px] text-muted">{hint}</span>
@@ -161,18 +175,20 @@ function ActionRow({
 
 function CreateSheet({ kind, onClose }: { kind: 'personal' | 'family' | null; onClose: () => void }) {
   const [name, setName] = useState('');
+  const [icon, setIcon] = useState(BUDGET_ICON_KEYS[0]);
   const { create } = useBudgetMutations();
   const setBudgetId = useAppStore((s) => s.setBudgetId);
 
   const submit = () => {
     if (!kind || !name.trim()) return;
     create.mutate(
-      { name: name.trim(), kind },
+      { name: name.trim(), kind, icon },
       {
         onSuccess: (budget) => {
           tg.haptic.success();
           setBudgetId(budget.id);
           setName('');
+          setIcon(BUDGET_ICON_KEYS[0]);
           onClose();
         },
         onError: () => tg.haptic.error(),
@@ -193,6 +209,11 @@ function CreateSheet({ kind, onClose }: { kind: 'personal' | 'family' | null; on
         autoFocus
         className="w-full rounded-2xl bg-elevated px-4 py-3 text-[16px] outline-none placeholder:text-muted"
       />
+      <div className="mt-4">
+        <div className="mb-2 text-[13px] text-muted">Иконка</div>
+        <IconGrid value={icon} onChange={setIcon} />
+      </div>
+
       <p className="mt-3 text-[13px] leading-snug text-muted">
         {kind === 'family'
           ? 'В семейном бюджете видны операции всех участников. После создания появится ссылка-приглашение.'
@@ -262,7 +283,7 @@ function DetailsSheet({ budget, onClose }: { budget: BudgetDto | null; onClose: 
   const [confirmDelete, setConfirmDelete] = useState(false);
   /** Участник, которого собираются исключить: подтверждаем перед удалением. */
   const [confirmMember, setConfirmMember] = useState<{ userId: number; name: string } | null>(null);
-  const { remove, leave, removeMember, rotateInvite, share } = useBudgetMutations();
+  const { remove, leave, removeMember, rotateInvite, share, update } = useBudgetMutations();
   const { data: session } = useSession();
 
   if (!budget) return null;
@@ -283,6 +304,15 @@ function DetailsSheet({ budget, onClose }: { budget: BudgetDto | null; onClose: 
   return (
     <Sheet open onClose={onClose} title={budget.name} tall>
       <div className="space-y-4 pt-1">
+        {budget.isOwner && (
+          <div>
+            <div className="mb-2 text-[13px] text-muted">Иконка</div>
+            <IconGrid
+              value={budget.icon}
+              onChange={(next) => update.mutate({ id: budget.id, icon: next })}
+            />
+          </div>
+        )}
         {/* Приглашение — только у семейных бюджетов */}
         {budget.kind === 'family' && budget.inviteLink && (
           <div className="rounded-2xl bg-elevated/50 p-4">
@@ -508,4 +538,28 @@ function pluralAccounts(count: number): string {
   if (mod10 === 1 && mod100 !== 11) return 'счёт';
   if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'счёта';
   return 'счетов';
+}
+
+/** Сетка выбора иконки бюджета. Используется и при создании, и при правке. */
+function IconGrid({ value, onChange }: { value: string; onChange: (icon: string) => void }) {
+  return (
+    <div className="grid grid-cols-6 gap-2">
+      {BUDGET_ICON_KEYS.map((key) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => {
+            tg.haptic.select();
+            onChange(key);
+          }}
+          aria-label={key}
+          className={`pressable flex h-12 items-center justify-center rounded-xl ${
+            value === key ? 'bg-accent/15 ring-2 ring-accent' : 'bg-elevated'
+          }`}
+        >
+          <BudgetIcon icon={key} className="h-9 w-9" />
+        </button>
+      ))}
+    </div>
+  );
 }

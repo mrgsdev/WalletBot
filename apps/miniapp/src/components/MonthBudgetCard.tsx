@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Pencil, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { ChevronRight, Pencil, TrendingDown, TrendingUp } from 'lucide-react';
 import type { BudgetDto, MonthBudgetDto } from '@budget/shared';
+import walletIcon from '../assets/wallet.png';
 import { Sheet } from './Sheet';
 import { Skeleton } from './ui';
 import { formatMoney, MONTHS_NOM } from '../lib/format';
@@ -52,9 +53,7 @@ export function MonthBudgetCard({
           className="pressable w-[156px] shrink-0 rounded-3xl bg-elevated p-3.5 text-left"
         >
           <div className="flex items-center justify-between">
-            <span className="squircle h-8 w-8 bg-accent/15 text-accent">
-              <Wallet size={16} />
-            </span>
+            <img src={walletIcon} alt="" className="h-8 w-8 shrink-0 object-contain" />
             <ChevronRight size={15} className="text-muted" />
           </div>
 
@@ -98,9 +97,7 @@ export function MonthBudgetCard({
           }}
           className="pressable flex w-full items-center gap-3 rounded-3xl bg-elevated p-4 text-left"
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
-            <Wallet size={20} />
-          </span>
+          <img src={walletIcon} alt="" className="h-11 w-11 shrink-0 object-contain" />
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-semibold">Бюджет на месяц</span>
             <span className="block text-[13px] text-muted">

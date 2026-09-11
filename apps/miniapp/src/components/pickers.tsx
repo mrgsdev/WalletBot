@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import type { AccountDto, CategoryDto } from '@budget/shared';
 import { CURRENCIES } from '@budget/shared';
+import { CATEGORY_ICON_IMAGES, CategoryIcon } from './CategoryIcon';
+import { AccountIcon } from './AccountIcon';
 import { Sheet } from './Sheet';
 import { ListRow } from './ui';
 import { formatMoney } from '../lib/format';
@@ -31,8 +33,15 @@ export function AccountPickerSheet({
         {list.map((account) => (
           <ListRow
             key={account.id}
-            icon={account.icon}
-            iconColor={account.color}
+            icon={
+              <AccountIcon
+                icon={account.icon}
+                color={account.color}
+                className="h-10 w-10"
+                emojiClassName="text-[18px]"
+              />
+            }
+            iconBare
             title={account.name}
             subtitle={account.isShared ? 'Общий счёт семьи' : account.currency}
             right={
@@ -154,13 +163,21 @@ export function CategoryPickerSheet({
                     className="pressable flex flex-col items-center gap-1.5 rounded-2xl p-2"
                   >
                     <span
-                      className="flex h-14 w-14 items-center justify-center rounded-full text-[24px] transition-all"
+                      className="flex h-14 w-14 items-center justify-center rounded-full transition-all"
                       style={{
-                        backgroundColor: active ? category.color : `${category.color}26`,
+                        backgroundColor: CATEGORY_ICON_IMAGES[category.icon]
+                          ? undefined
+                          : active
+                            ? category.color
+                            : `${category.color}26`,
                         boxShadow: active ? `0 0 0 3px ${category.color}55` : undefined,
                       }}
                     >
-                      {category.icon}
+                      <CategoryIcon
+                        icon={category.icon}
+                        className="h-12 w-12"
+                        emojiClassName="text-[24px]"
+                      />
                     </span>
                     <span className="line-clamp-2 text-center text-[11px] leading-tight text-muted">
                       {category.name}

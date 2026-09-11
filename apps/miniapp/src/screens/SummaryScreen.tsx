@@ -3,8 +3,11 @@ import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DonutChart } from '../charts/DonutChart';
+import { pastel, pastelInk } from '../lib/palette';
 import { PieChart } from '../charts/PieChart';
 import { TrendLine } from '../charts/TrendLine';
+import coinSmile from '../assets/coin-smile.png';
+import { AccountIcon } from '../components/AccountIcon';
 import { Segmented } from '../components/Segmented';
 import { EmptyState, ErrorState, Skeleton } from '../components/ui';
 import { useAccounts, useRates, useSession, useSummaryStats } from '../lib/queries';
@@ -127,7 +130,8 @@ export function SummaryScreen() {
 
             {data.expense === 0 && data.income === 0 ? (
               <EmptyState
-                icon="🪙"
+                iconBare
+                icon={<img src={coinSmile} alt="" className="h-20 w-20 object-contain" />}
                 title="Нет операций"
                 hint="За выбранный период ещё ничего не записано."
               />
@@ -140,9 +144,9 @@ export function SummaryScreen() {
                       value: g.amount,
                       color: g.color,
                     }))}
-                    size={132}
-                    thickness={16}
-                    gap={7}
+                    size={136}
+                    thickness={18}
+                    gap={9}
                   >
                     <div className="tabular text-[19px] font-bold leading-none">
                       {formatCompact(data.expense, data.currency)}
@@ -151,11 +155,11 @@ export function SummaryScreen() {
                 </div>
 
                 <div className="min-w-0 flex-1 space-y-1.5">
-                  {data.expenseGroups.slice(0, 5).map((group) => (
+                  {data.expenseGroups.slice(0, 5).map((group, index) => (
                     <div key={group.group} className="flex items-center gap-2">
                       <span
                         className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ backgroundColor: group.color }}
+                        style={{ backgroundColor: pastel(group.color, index) }}
                       />
                       <span className="min-w-0 flex-1 truncate text-[13px]">{group.group}</span>
                       <span className="tabular shrink-0 text-[13px] font-semibold">
@@ -186,9 +190,9 @@ export function SummaryScreen() {
                 ]}
               />
               <div className="flex-1 space-y-2">
-                <LegendRow color="#D8F24A" label="Доход" share={data.incomeShare} amount={data.income} currency={data.currency} />
-                <LegendRow color="#FF6E6E" label="Расход" share={data.expenseShare} amount={data.expense} currency={data.currency} />
-                <LegendRow color="#FFA640" label="Накопления" share={data.savingsShare} amount={data.savings} currency={data.currency} />
+                <LegendRow color={pastel('#D8F24A', 0)} label="Доход" share={data.incomeShare} amount={data.income} currency={data.currency} />
+                <LegendRow color={pastel('#FF6E6E', 1)} label="Расход" share={data.expenseShare} amount={data.expense} currency={data.currency} />
+                <LegendRow color={pastel('#FFA640', 2)} label="Накопления" share={data.savingsShare} amount={data.savings} currency={data.currency} />
               </div>
             </div>
           </section>
@@ -207,7 +211,7 @@ export function SummaryScreen() {
               >
                 <span
                   className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: trendType === 'income' ? '#D8F24A' : '#FF6E6E' }}
+                  style={{ backgroundColor: pastel(trendType === 'income' ? '#D8F24A' : '#FF6E6E') }}
                 />
                 {trendType === 'income' ? 'Доход' : 'Расход'}
               </button>
@@ -218,8 +222,11 @@ export function SummaryScreen() {
                   key={`${trendType}-${shownPoint}`}
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="tabular rounded-full px-3 py-1 text-[14px] font-semibold text-black"
-                  style={{ backgroundColor: trendType === 'income' ? '#D8F24A' : '#FF9B9B' }}
+                  className="tabular rounded-full px-3 py-1 text-[14px] font-semibold"
+                  style={{
+                    backgroundColor: pastel(trendType === 'income' ? '#D8F24A' : '#FF9B9B'),
+                    color: pastelInk(trendType === 'income' ? '#D8F24A' : '#FF9B9B'),
+                  }}
                 >
                   {formatMoney(trend[shownPoint]?.value ?? 0, data.currency)}
                 </motion.span>
@@ -314,12 +321,7 @@ function AccountCard({
       }}
     >
       <div className="flex items-start justify-between">
-        <span
-          className="flex h-10 w-10 items-center justify-center rounded-full text-[18px]"
-          style={{ backgroundColor: `${color}40` }}
-        >
-          {icon}
-        </span>
+        <AccountIcon icon={icon} color={color} className="h-10 w-10" emojiClassName="text-[18px]" />
         <span className="rounded-full bg-black/25 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide">
           {currency}
         </span>

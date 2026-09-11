@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowDownLeft, ArrowUpRight, ChevronRight, PieChart, Plus, Users } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, Plus, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { TransactionDto, TransactionType } from '@budget/shared';
+import { AccountIcon } from '../components/AccountIcon';
 import { ActionBar } from '../components/ActionBar';
 import { BudgetSwitcher } from '../components/BudgetSwitcher';
 import { MonthBudgetCard } from '../components/MonthBudgetCard';
@@ -69,39 +70,12 @@ export function HomeScreen({
     <div className="min-h-[var(--tg-viewport-height)] bg-bar">
       {/* ── Белое полотно: кто я, сколько у меня и где это лежит ── */}
       <div className="rounded-b-sheet bg-surface pb-5">
-        <header className="flex items-center justify-between gap-2 px-5 pb-1 pt-[calc(12px+var(--safe-top))]">
+        {/*
+          Кнопки статистики и профиля из шапки убраны: оба экрана есть
+          в нижней навигации, дублировать их сверху незачем.
+        */}
+        <header className="flex items-center justify-center px-5 pb-1 pt-[calc(12px+var(--safe-top))]">
           <span className="text-[17px] font-bold tracking-tight">{APP_NAME}</span>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                tg.haptic.light();
-                navigate('/stats');
-              }}
-              aria-label="Статистика"
-              className="pressable flex h-10 w-10 items-center justify-center rounded-full bg-elevated text-content"
-            >
-              <PieChart size={18} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                tg.haptic.light();
-                navigate('/more');
-              }}
-              className="pressable h-10 w-10 overflow-hidden rounded-full bg-elevated"
-            >
-              {session?.user.avatarUrl ? (
-                <img src={session.user.avatarUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center text-[15px] font-semibold">
-                  {session?.user.name?.[0]?.toUpperCase() ?? '·'}
-                </span>
-              )}
-            </button>
-          </div>
         </header>
 
         {/* Баланс: подпись и пилюля бюджета в одну строку, под ними — сумма */}
@@ -188,25 +162,20 @@ export function HomeScreen({
                       tg.haptic.light();
                       navigate('/wallet');
                     }}
-                    className="pressable w-[156px] shrink-0 rounded-3xl bg-elevated p-3.5 text-left"
+                    className="pressable flex w-[156px] shrink-0 flex-col rounded-3xl bg-elevated p-3.5 text-left"
                   >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="squircle h-8 w-8 shrink-0 text-[15px]"
-                        style={{ backgroundColor: `${account.color}26` }}
-                      >
-                        {account.icon}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
-                        {account.name}
-                      </span>
-                      {account.isShared && <Users size={13} className="shrink-0 text-muted" />}
+                    {/* Ритм повторяет плитку бюджета: иконка, подпись, сумма. */}
+                    <div className="flex w-full items-center justify-between">
+                      <AccountIcon icon={account.icon} color={account.color} />
+                      {account.isShared && <Users size={14} className="shrink-0 text-muted" />}
                     </div>
+
+                    <div className="mt-2.5 truncate text-[12px] text-muted">{account.name}</div>
 
                     <Money
                       value={account.balance}
                       currency={account.currency}
-                      className="mt-3.5 block text-[19px] font-bold leading-none"
+                      className="block text-[19px] font-bold leading-tight"
                     />
                   </button>
                 ))}
@@ -217,16 +186,13 @@ export function HomeScreen({
                     tg.haptic.light();
                     navigate('/wallet');
                   }}
-                  className="pressable flex w-[104px] shrink-0 flex-col items-start justify-between rounded-3xl bg-elevated p-3.5 text-left"
+                  className="pressable flex w-[112px] shrink-0 flex-col items-start rounded-3xl bg-elevated p-3.5 text-left"
                 >
                   <span className="squircle h-8 w-8 bg-line text-muted">
                     <Plus size={16} />
                   </span>
-                  <span className="text-[13px] font-medium leading-tight">
-                    Все
-                    <br />
-                    счета
-                  </span>
+                  <div className="mt-2.5 text-[12px] text-muted">Кошелёк</div>
+                  <div className="text-[19px] font-bold leading-tight">Все счета</div>
                 </button>
               </>
             )}

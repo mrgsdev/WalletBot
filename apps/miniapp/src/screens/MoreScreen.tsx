@@ -1,10 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Bell, ChevronRight, Coins, FileSpreadsheet, HelpCircle, Moon,
-  Palette, Sun, SunMoon, Tags, Target, Users, Wallet,
+  ChevronRight, Moon,
+  Palette, Sun, SunMoon,
 } from 'lucide-react';
 import { CURRENCIES, type ThemeMode } from '@budget/shared';
+import accountsIcon from '../assets/accounts.png';
+import exportIcon from '../assets/export.png';
+import tourIcon from '../assets/tour.png';
+import categoriesIcon from '../assets/categories.png';
+import planIcon from '../assets/plan.png';
+import themeIcon3d from '../assets/theme.png';
+import bellIcon from '../assets/bell.png';
+import currencyIcon from '../assets/currency.png';
+import membersIcon from '../assets/members.png';
 import { Sheet } from '../components/Sheet';
 import { Segmented } from '../components/Segmented';
 import { TOUR, TourTarget, useTour } from '../components/Tour';
@@ -57,33 +66,36 @@ export function MoreScreen() {
 
           <Group title="Бюджет">
             <TourTarget id="more-budgets">
-              <Row icon={<Users size={18} />} label="Бюджеты и участники"
+              <Row iconBare icon={<MenuIcon src={membersIcon} />} label="Бюджеты и участники"
                    hint={`${session.budgets.length} ${pluralBudgets(session.budgets.length)}`}
                    onClick={() => navigate('/budgets')} />
             </TourTarget>
-            <Row icon={<Wallet size={18} />} label="Счета" onClick={() => navigate('/wallet')} />
-            <Row icon={<Tags size={18} />} label="Категории" onClick={() => navigate('/categories')} />
-            <Row icon={<Target size={18} />} label="План на месяц" onClick={() => navigate('/plans')} />
+            <Row iconBare icon={<MenuIcon src={accountsIcon} />} label="Счета" onClick={() => navigate('/wallet')} />
+            <Row iconBare icon={<MenuIcon src={categoriesIcon} />} label="Категории" onClick={() => navigate('/categories')} />
+            <Row iconBare icon={<MenuIcon src={planIcon} />} label="План на месяц" onClick={() => navigate('/plans')} />
           </Group>
 
           <Group title="Настройки">
             <TourTarget id="more-theme">
               <Row
-                icon={themeIcon(settings.theme)}
+                iconBare
+                icon={<MenuIcon src={themeIcon3d} />}
                 label="Тема"
                 hint={THEME_LABELS[settings.theme]}
                 onClick={() => setSheet('theme')}
               />
             </TourTarget>
             <Row
-              icon={<Coins size={18} />}
+              iconBare
+              icon={<MenuIcon src={currencyIcon} />}
               label="Валюта отчётов"
               hint={settings.baseCurrency}
               onClick={() => setSheet('currency')}
             />
             <TourTarget id="more-reminder">
               <Row
-                icon={<Bell size={18} />}
+                iconBare
+                icon={<MenuIcon src={bellIcon} />}
                 label="Напоминания"
                 hint={
                   settings.dailyReminder
@@ -98,7 +110,8 @@ export function MoreScreen() {
           <Group title="Данные">
             <TourTarget id="more-export">
               <Row
-                icon={<FileSpreadsheet size={18} />}
+                iconBare
+                icon={<MenuIcon src={exportIcon} />}
                 label="Выгрузить в Excel"
                 hint="Файл придёт сообщением от бота"
                 onClick={() => setSheet('export')}
@@ -324,7 +337,8 @@ function ReplayTourRow() {
   const tour = useTour();
   return (
     <Row
-      icon={<HelpCircle size={18} />}
+      iconBare
+      icon={<MenuIcon src={tourIcon} />}
       label="Пройти обучение заново"
       hint={`${TOUR.length} шагов по всему приложению`}
       onClick={() => tour?.start()}
@@ -346,13 +360,15 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 }
 
 function Row({
-  icon, label, hint, onClick, renderRight,
+  icon, label, hint, onClick, renderRight, iconBare = false,
 }: {
   icon: React.ReactNode;
   label: string;
   hint?: string;
   onClick?: () => void;
   renderRight?: React.ReactNode;
+  /** Иконка сама себе картинка — рисуем без кружка-подложки. */
+  iconBare?: boolean;
 }) {
   return (
     <button
@@ -364,9 +380,13 @@ function Row({
       }}
       className="flex w-full items-center gap-3 px-4 py-3 text-left"
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-elevated text-muted">
-        {icon}
-      </span>
+      {iconBare ? (
+        <span className="shrink-0">{icon}</span>
+      ) : (
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-elevated text-muted">
+          {icon}
+        </span>
+      )}
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[15px] font-medium">{label}</span>
         {hint && <span className="block truncate text-[13px] text-muted">{hint}</span>}
@@ -382,4 +402,9 @@ function pluralBudgets(count: number): string {
   if (mod10 === 1 && mod100 !== 11) return 'бюджет';
   if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'бюджета';
   return 'бюджетов';
+}
+
+/** Объёмная иконка строки меню — в габарите прежнего кружка. */
+function MenuIcon({ src }: { src: string }) {
+  return <img src={src} alt="" className="h-9 w-9 object-contain" />;
 }

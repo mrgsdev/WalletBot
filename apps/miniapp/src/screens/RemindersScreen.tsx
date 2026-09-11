@@ -11,6 +11,7 @@ import {
   useSession,
   useUpdateSettings,
 } from '../lib/queries';
+import { AccountIcon } from '../components/AccountIcon';
 import { Sheet } from '../components/Sheet';
 import { EmptyState, Skeleton } from '../components/ui';
 import { CategoryPickerSheet } from '../components/pickers';
@@ -441,7 +442,15 @@ function ReminderSheet({
                     a.id === accountId ? 'bg-content text-ink' : 'bg-elevated text-muted'
                   }`}
                 >
-                  {a.icon} {a.name}
+                  <span className="inline-flex items-center gap-1.5">
+                    <AccountIcon
+                      icon={a.icon}
+                      color={a.color}
+                      className="h-5 w-5"
+                      emojiClassName="text-[12px]"
+                    />
+                    {a.name}
+                  </span>
                 </button>
               ))}
             </div>

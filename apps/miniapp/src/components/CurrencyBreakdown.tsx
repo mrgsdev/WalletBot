@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { AccountDto, RatesDto } from '@budget/shared';
 import { currencySymbol } from '@budget/shared';
+import { AccountIcon } from './AccountIcon';
 import { Sheet } from './Sheet';
 import { formatMoney, formatNumber } from '../lib/format';
 import { tg } from '../lib/telegram';
@@ -119,7 +120,12 @@ export function CurrencyBreakdown({
               <div className="mt-2.5 space-y-1 border-t border-line/50 pt-2.5">
                 {group.accounts.map((account) => (
                   <div key={account.id} className="flex items-center gap-2 text-[13px]">
-                    <span className="text-[14px]">{account.icon}</span>
+                    <AccountIcon
+                      icon={account.icon}
+                      color={account.color}
+                      className="h-5 w-5"
+                      emojiClassName="text-[12px]"
+                    />
                     <span className="min-w-0 flex-1 truncate text-muted">{account.name}</span>
                     <span className="tabular shrink-0">
                       {formatMoney(account.balance, account.currency)}

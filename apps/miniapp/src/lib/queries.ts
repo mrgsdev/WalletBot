@@ -283,6 +283,23 @@ export function useSaveCategory() {
   });
 }
 
+/**
+ * Удаление категории. Сервер удаляет её только если на неё не ссылается
+ * ни одна операция — иначе возвращает archived:true и оставляет в архиве,
+ * чтобы история не осталась без категории.
+ */
+export function useDeleteCategory() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiFetch<{ ok: boolean; archived: boolean }>(`/categories/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['categories'] });
+      client.invalidateQueries({ queryKey: ['stats'] });
+    },
+  });
+}
+
 export function useSavePlan() {
   const client = useQueryClient();
   return useMutation({

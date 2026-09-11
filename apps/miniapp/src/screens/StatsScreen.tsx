@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import { ChevronDown, History, LineChart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DonutChart } from '../charts/DonutChart';
+import { pastel } from '../lib/palette';
+import { CategoryIcon } from '../components/CategoryIcon';
+import { AccountIcon } from '../components/AccountIcon';
 import { Segmented } from '../components/Segmented';
 import { TourTarget } from '../components/Tour';
 import { ChangeBadge } from '../components/ChangeBadge';
@@ -57,11 +60,26 @@ export function StatsScreen() {
     accountId === null ? 'Все счета' : accounts.find((a) => a.id === accountId)?.name ?? 'Все счета';
 
   const items = data?.items ?? [];
-  const segments = items.map((item) => ({
-    id: item.categoryId ?? 'none',
-    value: item.amount,
-    color: item.color,
-  }));
+  /*
+   * На кольцо пускаем только крупные категории.
+   *
+   * Хвост из мелких долей всё равно упирается в минимальную длину капсулы
+   * (короче собственной толщины дуга со скруглёнными концами не бывает),
+   * и кольцо рассыпается на одинаковые точки. Хвост сворачиваем в «Остальное»,
+   * полный список остаётся в легенде под графиком.
+   */
+  const DONUT_LIMIT = 8;
+  const restAmount = items.slice(DONUT_LIMIT).reduce((sum, item) => sum + item.amount, 0);
+  const segments = [
+    ...items.slice(0, DONUT_LIMIT).map((item) => ({
+      id: (item.categoryId ?? 'none') as string | number,
+      value: item.amount,
+      color: item.color,
+    })),
+    ...(restAmount > 0
+      ? [{ id: 'rest' as string | number, value: restAmount, color: '#B4B4BE' }]
+      : []),
+  ];
 
   const highlighted = items.find((i) => (i.categoryId ?? 'none') === activeCategory) ?? null;
 
@@ -157,12 +175,16 @@ export function StatsScreen() {
           <TourTarget id="stats-donut" className="flex justify-center py-2">
             <DonutChart
               segments={segments}
-              size={248}
-              thickness={28}
-              gap={12}
+              size={258}
+              thickness={26}
+              gap={10}
               activeId={activeCategory}
               onSegmentClick={(id) => {
                 tg.haptic.select();
+                if (id === 'rest') {
+                  setActiveCategory(null);
+                  return;
+                }
                 setActiveCategory((prev) => (prev === id ? null : (id as number)));
               }}
             >
@@ -170,11 +192,17 @@ export function StatsScreen() {
                 key={highlighted?.categoryId ?? 'total'}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="px-8"
+                className="px-6"
               >
                 {highlighted ? (
                   <>
-                    <div className="text-[28px]">{highlighted.icon}</div>
+                    <div className="flex justify-center">
+                      <CategoryIcon
+                        icon={highlighted.icon}
+                        className="h-8 w-8"
+                        emojiClassName="text-[28px]"
+                      />
+                    </div>
                     <div className="tabular text-[26px] font-bold leading-tight">
                       {formatCompact(highlighted.amount, data!.currency)}
                     </div>
@@ -185,10 +213,10 @@ export function StatsScreen() {
                   </>
                 ) : (
                   <>
-                    <div className="tabular text-[38px] font-bold leading-none">
+                    <div className="tabular text-[36px] font-bold leading-none tracking-[-0.02em]">
                       {formatCompact(data!.total, data!.currency)}
                     </div>
-                    <div className="mt-1 text-[12px] text-muted">
+                    <div className="mt-1.5 text-[13px] text-muted">
                       {type === 'expense' ? 'Расходы' : 'Доходы'} за период
                     </div>
                     {data!.previousChangePercent !== null && (
@@ -205,7 +233,7 @@ export function StatsScreen() {
 
           {/* Список категорий в две колонки */}
           <TourTarget id="stats-list" className="grid grid-cols-2 gap-x-4 gap-y-1 px-5 pt-3">
-            {items.map((item) => {
+            {items.map((item, index) => {
               const id = item.categoryId ?? 'none';
               const dimmed = activeCategory !== null && activeCategory !== id;
               return (
@@ -222,7 +250,7 @@ export function StatsScreen() {
                 >
                   <span
                     className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: item.color }}
+                    style={{ backgroundColor: pastel(item.color, index) }}
                   />
                   <span className="min-w-0 flex-1 truncate text-[13.5px]">{item.name}</span>
                   <span className="shrink-0 text-right">
@@ -310,7 +338,12 @@ export function StatsScreen() {
             }}
             className="flex w-full items-center gap-3 border-b border-line/60 py-3.5 text-left last:border-0"
           >
-            <span className="text-[18px]">{account.icon}</span>
+            <AccountIcon
+              icon={account.icon}
+              color={account.color}
+              className="h-7 w-7"
+              emojiClassName="text-[15px]"
+            />
             <span className="flex-1 text-[15px] font-medium">{account.name}</span>
             <span className="tabular text-[14px] text-muted">
               {formatMoney(account.balance, account.currency)}

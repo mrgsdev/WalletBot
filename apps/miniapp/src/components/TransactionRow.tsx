@@ -1,5 +1,6 @@
 import { ArrowLeftRight } from 'lucide-react';
 import type { TransactionDto } from '@budget/shared';
+import { CategoryIcon } from './CategoryIcon';
 import { Money } from './Money';
 import { formatDateLabel } from '../lib/format';
 import { tg } from '../lib/telegram';
@@ -53,16 +54,19 @@ export function TransactionRow({
       className="flex w-full items-center gap-3 py-3 text-left"
     >
       <span className="relative shrink-0">
-        <span
-          className="squircle h-11 w-11 text-[19px]"
-          style={{
-            backgroundColor: isTransfer
-              ? 'rgb(var(--c-elevated))'
-              : `${transaction.categoryColor ?? '#8E8E93'}24`,
-          }}
-        >
-          {isTransfer ? <ArrowLeftRight size={18} className="text-muted" /> : transaction.categoryIcon ?? '🏷'}
-        </span>
+        {isTransfer ? (
+          <span className="squircle h-11 w-11 bg-elevated">
+            <ArrowLeftRight size={18} className="text-muted" />
+          </span>
+        ) : (
+          <CategoryIcon
+            icon={transaction.categoryIcon ?? '🏷'}
+            color={transaction.categoryColor ?? '#8E8E93'}
+            className="h-11 w-11"
+            emojiClassName="text-[19px]"
+            rounded="squircle"
+          />
+        )}
 
         {author && (
           <span
@@ -88,12 +92,14 @@ export function TransactionRow({
           value={transaction.convertedAmount}
           currency={transaction.accountCurrency}
           sign={sign}
+          symbolSide="right"
           className={`block text-[15px] font-semibold ${amountColor}`}
         />
         {transaction.currency !== transaction.accountCurrency && (
           <Money
             value={transaction.amount}
             currency={transaction.currency}
+            symbolSide="right"
             className="block text-[12px] text-muted"
           />
         )}

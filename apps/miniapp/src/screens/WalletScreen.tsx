@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeftRight, Plus, Trash2 } from 'lucide-react';
 import type { AccountDto } from '@budget/shared';
 import { CURRENCIES, currencySymbol } from '@budget/shared';
+import { ACCOUNT_ICON_IMAGES, AccountIcon } from '../components/AccountIcon';
 import { Sheet } from '../components/Sheet';
 import { EmptyState, ErrorState, ListRow, PrimaryButton, Skeleton } from '../components/ui';
 import { BudgetSwitcher } from '../components/BudgetSwitcher';
@@ -14,7 +15,8 @@ import { useIsFamilyBudget } from '../hooks/useCurrentBudget';
 import { useMainButton } from '../hooks/useMainButton';
 import { tg } from '../lib/telegram';
 
-const ICONS = ['💳', '💵', '🏦', '🐖', '📈', '🅁', '💼', '🎯', '🧧', '🪙', '🏠', '✈️'];
+// Порядок = порядок в наборе объёмных иконок из AccountIcon.
+const ICONS = ['💳', '💵', '💰', '🪙', '🥇', '🔐', '👛', '💼', '🧳', '🏦', '🐖', '🛍'];
 const COLORS = ['#6EC1FF', '#7ED97E', '#B57BFF', '#FF9F6E', '#FF6E8A', '#E6E86E', '#5B5BD6', '#7EE8C6'];
 
 /** Экран «Кошелёк»: счета, их балансы и переводы между ними. */
@@ -85,7 +87,8 @@ export function WalletScreen({ onTransfer }: { onTransfer: () => void }) {
           </div>
         ) : accounts.length === 0 ? (
           <EmptyState
-            icon="💳"
+            iconBare
+            icon={<img src={ACCOUNT_ICON_IMAGES['💳']} alt="" className="h-20 w-20 object-contain" />}
             title="Нет счетов"
             hint="Создайте счёт — карту, наличные или счёт в банке."
             action={
@@ -127,8 +130,15 @@ export function WalletScreen({ onTransfer }: { onTransfer: () => void }) {
                   {group.accounts.map((account) => (
                     <ListRow
                       key={account.id}
-                      icon={account.icon}
-                      iconColor={account.color}
+                      icon={
+                        <AccountIcon
+                          icon={account.icon}
+                          color={account.color}
+                          className="h-10 w-10"
+                          emojiClassName="text-[18px]"
+                        />
+                      }
+                      iconBare
                       title={account.name}
                       /* В личном бюджете участник один, поэтому «общий/личный»
                          и имя владельца — лишний шум — валюта уже в заголовке группы. */
@@ -273,7 +283,16 @@ function AccountEditor({
                   icon === value ? 'bg-content' : 'bg-elevated'
                 }`}
               >
-                {value}
+                {/* Кружок кнопки уже даёт фон, поэтому картинку кладём без подложки. */}
+                {ACCOUNT_ICON_IMAGES[value] ? (
+                  <img
+                    src={ACCOUNT_ICON_IMAGES[value]}
+                    alt=""
+                    className="h-7 w-7 object-contain"
+                  />
+                ) : (
+                  value
+                )}
               </button>
             ))}
           </div>

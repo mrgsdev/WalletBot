@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { CategoryIcon } from '../components/CategoryIcon';
 import { Segmented } from '../components/Segmented';
 import { EmptyState, ErrorState, Skeleton } from '../components/ui';
 import { usePlans, useSavePlan } from '../lib/queries';
@@ -142,12 +143,12 @@ export function PlansScreen() {
               return (
                 <div key={item.categoryId} className="rounded-2xl bg-card p-3">
                   <div className="flex items-center gap-3">
-                    <span
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[16px]"
-                      style={{ backgroundColor: `${item.categoryColor}26` }}
-                    >
-                      {item.categoryIcon}
-                    </span>
+                    <CategoryIcon
+                      icon={item.categoryIcon}
+                      color={item.categoryColor}
+                      className="h-9 w-9"
+                      emojiClassName="text-[16px]"
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[15px] font-medium">{item.categoryName}</div>
                       <div className="tabular text-[12px] text-muted">

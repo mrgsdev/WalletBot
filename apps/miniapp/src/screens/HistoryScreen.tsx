@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { ChevronLeft, SlidersHorizontal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { TransactionDto } from '@budget/shared';
+import { CategoryIcon } from '../components/CategoryIcon';
+import { AccountIcon } from '../components/AccountIcon';
 import { TransactionRow } from '../components/TransactionRow';
 import { Sheet } from '../components/Sheet';
 import { Segmented } from '../components/Segmented';
@@ -229,7 +231,15 @@ export function HistoryScreen({ onEdit }: { onEdit: (transaction: TransactionDto
                   active={accountId === account.id}
                   onClick={() => setAccountId(accountId === account.id ? null : account.id)}
                 >
-                  {account.icon} {account.name}
+                  <span className="inline-flex items-center gap-1.5">
+                    <AccountIcon
+                      icon={account.icon}
+                      color={account.color}
+                      className="h-5 w-5"
+                      emojiClassName="text-[12px]"
+                    />
+                    {account.name}
+                  </span>
                 </FilterChip>
               ))}
             </div>
@@ -250,7 +260,15 @@ export function HistoryScreen({ onEdit }: { onEdit: (transaction: TransactionDto
                     )
                   }
                 >
-                  {category.icon} {category.name}
+                  <span className="inline-flex items-center gap-1.5">
+                    <CategoryIcon
+                      icon={category.icon}
+                      color={category.color}
+                      className="h-5 w-5"
+                      emojiClassName="text-[12px]"
+                    />
+                    {category.name}
+                  </span>
                 </FilterChip>
               ))}
             </div>

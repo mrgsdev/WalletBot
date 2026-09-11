@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Archive, ChevronLeft, Plus, RotateCcw } from 'lucide-react';
+import { Archive, ChevronLeft, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { CategoryDto } from '@budget/shared';
 import { CHART_PALETTE } from '@budget/shared';
+import { CATEGORY_ICON_IMAGES, CategoryIcon } from '../components/CategoryIcon';
 import { Segmented } from '../components/Segmented';
 import { Sheet } from '../components/Sheet';
 import { EmptyState, PrimaryButton, Skeleton } from '../components/ui';
-import { useCategories, useSaveCategory } from '../lib/queries';
+import { useCategories, useDeleteCategory, useSaveCategory } from '../lib/queries';
 import { apiFetch } from '../lib/api';
 import { tg } from '../lib/telegram';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -135,12 +136,12 @@ export function CategoriesScreen() {
                     }}
                     className="pressable flex flex-col items-center gap-1.5 rounded-2xl p-2"
                   >
-                    <span
-                      className="flex h-14 w-14 items-center justify-center rounded-full text-[24px]"
-                      style={{ backgroundColor: `${category.color}26` }}
-                    >
-                      {category.icon}
-                    </span>
+                    <CategoryIcon
+                      icon={category.icon}
+                      color={category.color}
+                      className="h-14 w-14"
+                      emojiClassName="text-[24px]"
+                    />
                     <span className="line-clamp-2 text-center text-[11px] leading-tight text-muted">
                       {category.name}
                     </span>
@@ -179,6 +180,8 @@ function CategoryEditor({
   onClose: () => void;
 }) {
   const save = useSaveCategory();
+  const remove = useDeleteCategory();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [name, setName] = useState('');
   const [icon, setIcon] = useState(ICON_CHOICES[0]);
   const [color, setColor] = useState(CHART_PALETTE[0]);
@@ -187,6 +190,7 @@ function CategoryEditor({
   useEffect(() => {
     if (!open) return;
     setError(null);
+    setConfirmDelete(false);
     if (category) {
       setName(category.name);
       setIcon(category.icon);
@@ -219,6 +223,25 @@ function CategoryEditor({
     }
   };
 
+  const doDelete = async () => {
+    if (!category) return;
+    try {
+      const result = await remove.mutateAsync(category.id);
+      if (result.archived) {
+        // На категорию ссылаются операции — сервер её не удалил.
+        tg.haptic.warning();
+        setConfirmDelete(false);
+        setError('В категории есть операции — удалить нельзя. Она осталась в архиве.');
+        return;
+      }
+      tg.haptic.success();
+      onClose();
+    } catch (err) {
+      tg.haptic.error();
+      setError(err instanceof Error ? err.message : 'Не удалось удалить категорию');
+    }
+  };
+
   const toggleArchive = async () => {
     if (!category) return;
     try {
@@ -235,12 +258,12 @@ function CategoryEditor({
     <Sheet open={open} onClose={onClose} title={category ? 'Категория' : 'Новая категория'} tall>
       <div className="space-y-5 pt-1">
         <div className="flex justify-center">
-          <span
-            className="flex h-20 w-20 items-center justify-center rounded-full text-[34px]"
-            style={{ backgroundColor: `${color}33` }}
-          >
-            {icon}
-          </span>
+          <CategoryIcon
+            icon={icon}
+            color={color}
+            className="h-20 w-20"
+            emojiClassName="text-[34px]"
+          />
         </div>
 
         <input
@@ -265,7 +288,15 @@ function CategoryEditor({
                   icon === value ? 'bg-content' : 'bg-elevated'
                 }`}
               >
-                {value}
+                {CATEGORY_ICON_IMAGES[value] ? (
+                  <img
+                    src={CATEGORY_ICON_IMAGES[value]}
+                    alt=""
+                    className="h-8 w-8 object-contain"
+                  />
+                ) : (
+                  value
+                )}
               </button>
             ))}
           </div>
@@ -308,6 +339,50 @@ function CategoryEditor({
             {category.isArchived ? <RotateCcw size={17} /> : <Archive size={17} />}
             {category.isArchived ? 'Вернуть из архива' : 'В архив'}
           </button>
+        )}
+
+        {/* Удаление предлагаем только из архива: сначала убрать с глаз, потом решать. */}
+        {category?.isArchived && !confirmDelete && (
+          <button
+            type="button"
+            onClick={() => {
+              tg.haptic.warning();
+              setConfirmDelete(true);
+            }}
+            className="pressable flex w-full items-center justify-center gap-2 rounded-2xl bg-negative/10 px-4 py-3.5 text-[15px] font-medium text-negative"
+          >
+            <Trash2 size={17} />
+            Удалить навсегда
+          </button>
+        )}
+
+        {category?.isArchived && confirmDelete && (
+          <div className="rounded-2xl bg-negative/10 p-4">
+            <div className="text-[15px] font-semibold text-negative">
+              Удалить «{category.name}»?
+            </div>
+            <p className="mt-1 text-[13px] leading-snug text-muted">
+              Категория исчезнет из списка выбора и из архива. Восстановить не получится.
+              Если на неё ссылаются операции, она останется в архиве.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="pressable flex-1 rounded-xl bg-elevated px-4 py-2.5 text-[14px] font-medium"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={doDelete}
+                disabled={remove.isPending}
+                className="pressable flex-1 rounded-xl bg-negative px-4 py-2.5 text-[14px] font-semibold text-white disabled:opacity-50"
+              >
+                {remove.isPending ? 'Удаляю…' : 'Удалить'}
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </Sheet>

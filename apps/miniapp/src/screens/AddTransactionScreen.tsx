@@ -23,6 +23,7 @@ import { useAccounts, useCategories, useDeleteTransaction, useRates, useSaveTran
 import { formatMoney, formatNumber, formatDateLabel, toDateInputValue } from '../lib/format';
 import { tg } from '../lib/telegram';
 import { emitTourEvent } from '../lib/tourBus';
+import { AccountIcon } from '../components/AccountIcon';
 import { TourTarget } from '../components/Tour';
 import { Sheet } from '../components/Sheet';
 import { AccountPickerSheet, CategoryPickerSheet, CurrencyPickerSheet } from '../components/pickers';
@@ -301,12 +302,12 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
                   }}
                   className="pressable flex items-center gap-2.5 rounded-full bg-elevated/80 py-2 pl-2 pr-4"
                 >
-                  <span
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-[16px]"
-                    style={{ backgroundColor: account ? `${account.color}33` : undefined }}
-                  >
-                    {account?.icon ?? '💳'}
-                  </span>
+                  <AccountIcon
+                    icon={account?.icon ?? '💳'}
+                    color={account?.color}
+                    className="h-9 w-9"
+                    emojiClassName="text-[16px]"
+                  />
                   <span className="text-left">
                     <span className="block text-[14px] font-semibold leading-tight">
                       {account?.name ?? 'Счёт'}
@@ -391,7 +392,12 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
                   <ArrowLeftRight size={14} className="text-muted" />
                   {toAccount ? (
                     <>
-                      <span>{toAccount.icon}</span>
+                      <AccountIcon
+                        icon={toAccount.icon}
+                        color={toAccount.color}
+                        className="h-5 w-5"
+                        emojiClassName="text-[13px]"
+                      />
                       <span className="font-medium">{toAccount.name}</span>
                     </>
                   ) : (

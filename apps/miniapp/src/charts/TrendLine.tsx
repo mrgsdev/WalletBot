@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useId } from 'react';
+import { pastel, pastelInk } from '../lib/palette';
 
 export interface TrendDatum {
   label: string;
@@ -29,6 +30,10 @@ export function TrendLine({
   showArea = true,
 }: Props) {
   const gradientId = useId();
+  // Заливка — пастельная, сама линия темнее того же оттенка: так график
+  // остаётся читаемым и не выбивается из палитры остальных диаграмм.
+  const areaColor = pastel(color);
+  const lineColor = pastelInk(color);
   const width = 320;
   const padY = 14;
   const padX = 10;
@@ -62,8 +67,8 @@ export function TrendLine({
     >
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
+          <stop offset="0%" stopColor={areaColor} stopOpacity="0.85" />
+          <stop offset="100%" stopColor={areaColor} stopOpacity="0" />
         </linearGradient>
       </defs>
 
@@ -72,8 +77,8 @@ export function TrendLine({
       <motion.path
         d={path}
         fill="none"
-        stroke={color}
-        strokeWidth={3}
+        stroke={lineColor}
+        strokeWidth={3.5}
         strokeLinecap="round"
         strokeLinejoin="round"
         initial={{ pathLength: 0 }}
@@ -86,9 +91,9 @@ export function TrendLine({
         <motion.circle
           cx={points[active].x}
           cy={points[active].y}
-          r={4.5}
-          fill={color}
-          stroke="rgb(var(--c-ink))"
+          r={5}
+          fill={lineColor}
+          stroke="rgb(var(--c-surface))"
           strokeWidth={3}
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}

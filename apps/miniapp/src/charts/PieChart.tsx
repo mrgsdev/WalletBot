@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { pastel } from '../lib/palette';
 
 export interface PieSlice {
   id: string;
@@ -27,7 +28,8 @@ function slicePath(cx: number, cy: number, r: number, start: number, end: number
 
 /**
  * Маленькая круговая диаграмма Доход / Расход / Накопления
- * с зазорами между дольками — как на референсном экране сводки.
+ * с зазорами между дольками. Цвета приглушены до пастельных —
+ * в одном ряду с кольцом расходов иначе спорят два разных языка.
  */
 export function PieChart({ slices, size = 120, gapDegrees = 4 }: Props) {
   const total = slices.reduce((sum, s) => sum + Math.max(s.value, 0), 0);
@@ -58,7 +60,7 @@ export function PieChart({ slices, size = 120, gapDegrees = 4 }: Props) {
           <motion.path
             key={slice.id}
             d={slicePath(cx, cy, r, start, end)}
-            fill={slice.color}
+            fill={pastel(slice.color, index)}
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.06, type: 'spring', stiffness: 160, damping: 18 }}

@@ -67,11 +67,14 @@ export function EmptyState({
   title,
   hint,
   action,
+  iconBare = false,
 }: {
   icon: ReactNode;
   title: string;
   hint?: string;
   action?: ReactNode;
+  /** Иконка сама себе картинка — рисуем без кружка-подложки. */
+  iconBare?: boolean;
 }) {
   return (
     <motion.div
@@ -79,9 +82,13 @@ export function EmptyState({
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center gap-3 px-8 py-14 text-center"
     >
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-elevated/60 text-[28px]">
-        {icon}
-      </div>
+      {iconBare ? (
+        icon
+      ) : (
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-elevated/60 text-[28px]">
+          {icon}
+        </div>
+      )}
       <div className="text-[17px] font-semibold">{title}</div>
       {hint && <div className="text-[14px] leading-snug text-muted">{hint}</div>}
       {action}
@@ -142,9 +149,12 @@ export function ListRow({
   subtitle,
   right,
   onClick,
+  iconBare = false,
 }: {
   icon: ReactNode;
   iconColor?: string;
+  /** Иконка сама себе картинка — рисуем без кружка-подложки. */
+  iconBare?: boolean;
   title: ReactNode;
   subtitle?: ReactNode;
   right?: ReactNode;
@@ -164,12 +174,16 @@ export function ListRow({
       }
       className="flex w-full items-center gap-3 py-2.5 text-left"
     >
-      <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[18px]"
-        style={{ backgroundColor: iconColor ? `${iconColor}26` : 'rgb(var(--c-elevated))' }}
-      >
-        {icon}
-      </div>
+      {iconBare ? (
+        <div className="shrink-0">{icon}</div>
+      ) : (
+        <div
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[18px]"
+          style={{ backgroundColor: iconColor ? `${iconColor}26` : 'rgb(var(--c-elevated))' }}
+        >
+          {icon}
+        </div>
+      )}
       <div className="min-w-0 flex-1">
         <div className="truncate text-[15px] font-medium">{title}</div>
         {subtitle && <div className="truncate text-[13px] text-muted">{subtitle}</div>}
