@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Crown, LogOut, Plus, RefreshCw, Share2, Trash2, UserMinus, Users, Wallet,
+  ArrowLeft, Crown, LogOut, Plus, RefreshCw, Share2, Trash2, UserMinus, Users,
 } from 'lucide-react';
 import type { BudgetDto } from '@budget/shared';
 import familyIcon from '../assets/family.png';
+import personalIcon from '../assets/personal.png';
 import { BUDGET_ICON_KEYS, BudgetIcon } from '../components/BudgetIcon';
 import { Sheet } from '../components/Sheet';
 import { Skeleton } from '../components/ui';
@@ -58,7 +59,8 @@ export function BudgetsScreen() {
 
           <div className="space-y-2">
             <ActionRow
-              icon={<Wallet size={18} />}
+              iconBare
+              icon={<img src={personalIcon} alt="" className="h-10 w-10 object-contain" />}
               label="Создать личный бюджет"
               hint="Отдельный кошелёк — например, для бизнеса или отпуска"
               onClick={() => setCreating('personal')}
