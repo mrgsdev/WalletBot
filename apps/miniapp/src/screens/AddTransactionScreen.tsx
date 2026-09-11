@@ -24,6 +24,7 @@ import { formatMoney, formatNumber, formatDateLabel, toDateInputValue } from '..
 import { tg } from '../lib/telegram';
 import { emitTourEvent } from '../lib/tourBus';
 import { AccountIcon } from '../components/AccountIcon';
+import { CATEGORY_ICON_IMAGES, CategoryIcon } from '../components/CategoryIcon';
 import { TourTarget } from '../components/Tour';
 import { Sheet } from '../components/Sheet';
 import { AccountPickerSheet, CategoryPickerSheet, CurrencyPickerSheet } from '../components/pickers';
@@ -467,11 +468,22 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
                 }}
                 className="pressable flex w-full min-w-0 items-center gap-2.5 rounded-full bg-card py-2 pl-2 pr-4"
               >
+                {/* У картинки свой цвет — заливку кружка оставляем только эмодзи. */}
                 <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[17px]"
-                  style={{ backgroundColor: category ? category.color : 'rgb(var(--c-elevated))' }}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor:
+                      category && !CATEGORY_ICON_IMAGES[category.icon]
+                        ? category.color
+                        : undefined,
+                  }}
                 >
-                  {category?.icon ?? '🏷'}
+                  <CategoryIcon
+                    icon={category?.icon ?? '🏷'}
+                    className="h-9 w-9"
+                    emojiClassName="text-[17px]"
+                    bare
+                  />
                 </span>
                 <span className="truncate text-[15px] font-medium">
                   {category?.name ?? 'Категория'}

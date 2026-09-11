@@ -94,6 +94,7 @@ export function CategoryIcon({
   className = 'h-10 w-10',
   emojiClassName = 'text-[18px]',
   rounded = 'full',
+  bare = false,
 }: {
   icon: string;
   /** Цвет категории — подложка под эмодзи. У картинок свой цвет, подложка им не нужна. */
@@ -102,6 +103,8 @@ export function CategoryIcon({
   emojiClassName?: string;
   /** Форма подложки под эмодзи: кружок в списках, сквиркл в строке операции. */
   rounded?: 'full' | 'squircle';
+  /** Эмодзи без собственной подложки — когда фон уже даёт родитель. */
+  bare?: boolean;
 }) {
   const image = CATEGORY_ICON_IMAGES[icon];
 
@@ -124,7 +127,11 @@ export function CategoryIcon({
   return (
     <span
       className={`${rounded === 'squircle' ? 'squircle' : 'flex items-center justify-center rounded-full'} ${className} shrink-0 ${emojiClassName}`}
-      style={{ backgroundColor: color ? `${color}26` : 'rgb(var(--c-elevated))' }}
+      style={
+        bare
+          ? undefined
+          : { backgroundColor: color ? `${color}26` : 'rgb(var(--c-elevated))' }
+      }
     >
       {icon}
     </span>
