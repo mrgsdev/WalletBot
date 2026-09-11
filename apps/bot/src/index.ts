@@ -1,4 +1,5 @@
 import { Telegraf, Markup } from 'telegraf';
+import { escapeHtml, truncate } from '@budget/shared';
 import { env } from './env.js';
 import { api } from './api.js';
 import { startReminders } from './reminders.js';
@@ -15,6 +16,22 @@ if (!env.botToken) {
 const bot = new Telegraf(env.botToken, {
   telegram: { agent: createTelegramAgent() },
 });
+
+/** Сколько бюджетов показываем в одном сообщении. */
+const BUDGET_LIST_LIMIT = 20;
+/** Кнопок «поделиться» — не больше, иначе клавиатура становится простынёй. */
+const SHARE_BUTTON_LIMIT = 5;
+
+/**
+ * Ссылка на пересылку приглашения.
+ *
+ * Название обрезаем: кириллица при кодировании раздувается до шести байт
+ * на символ, и длинное имя превращало ссылку в килобайтную простыню.
+ */
+function shareUrl(link: string, budgetName: string): string {
+  const text = `Присоединяйся к бюджету «${truncate(budgetName, 40)}»`;
+  return `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+}
 
 const openAppKeyboard = (label = '💰 Открыть бюджет') =>
   Markup.inlineKeyboard([[Markup.button.webApp(label, env.miniappUrl)]]);
@@ -45,7 +62,7 @@ bot.start(async (ctx) => {
       );
     } catch (err) {
       await ctx.reply(
-        `Не удалось принять приглашение: ${(err as Error).message}\n\n` +
+        `Не удалось принять приглашение: ${errorText(err)}\n\n` +
           'Попросите отправителя обновить ссылку.',
         openAppKeyboard(),
       );
@@ -91,50 +108,56 @@ bot.command('add', (ctx) =>
 bot.command('budgets', async (ctx) => {
   try {
     const budgets = await api.listBudgets(ctx.from.id);
-    if (budgets.length === 0) {
-      await ctx.reply(
-        'У вас пока нет семейных бюджетов.\n\n' +
-          'Создайте командой: /newbudget Семья Ивановых\n' +
-          'Или в приложении: «Ещё» → «Бюджеты и участники».',
-        openAppKeyboard(),
-      );
-      return;
-    }
 
-    for (const budget of budgets) {
-      await ctx.reply(
-        `${budget.kind === 'family' ? '👨‍👩‍👧' : '👛'} <b>${escapeHtml(budget.name)}</b>\n` +
-          `Участников: ${budget.membersCount}\n` +
-          (budget.inviteCode ? `Код приглашения: <code>${budget.inviteCode}</code>\n\n` : '\n') +
-          (budget.inviteLink ? `Ссылка: ${budget.inviteLink}` : ''),
-        {
-          parse_mode: 'HTML',
-          ...(budget.inviteLink
-            ? Markup.inlineKeyboard([
-                [
-                  Markup.button.url(
-                    '📨 Поделиться приглашением',
-                    `https://t.me/share/url?url=${encodeURIComponent(budget.inviteLink)}&text=${encodeURIComponent(
-                      `Присоединяйся к бюджету «${budget.name}»`,
-                    )}`,
-                  ),
-                ],
-                [Markup.button.webApp('💰 Открыть бюджет', env.miniappUrl)],
-              ])
-            : {}),
-        },
-      );
-    }
+    /*
+     * Одно сообщение, а не по штуке на бюджет: раньше десять бюджетов
+     * превращались в десять сообщений подряд, Telegram придерживал часть
+     * из них, и порядок в чате ломался.
+     */
+    const shown = budgets.slice(0, BUDGET_LIST_LIMIT);
+
+    const lines = shown.map((budget) => {
+      const head = `${budget.kind === 'family' ? '👨‍👩‍👧' : '👛'} <b>${escapeHtml(budget.name)}</b>`;
+      const members = budget.kind === 'family' ? `\nУчастников: ${budget.membersCount}` : '';
+      const code = budget.inviteCode ? `\nКод: <code>${budget.inviteCode}</code>` : '';
+      return head + members + code;
+    });
+
+    const tail =
+      budgets.length > shown.length
+        ? `\n\nПоказаны первые ${shown.length} из ${budgets.length}. Остальные — в приложении.`
+        : '';
+
+    // Кнопка «Поделиться» — только у семейных, иначе делиться нечем.
+    const shareRows = shown
+      .filter((budget) => budget.inviteLink)
+      .slice(0, SHARE_BUTTON_LIMIT)
+      .map((budget) => [
+        Markup.button.url(
+          truncate(`📨 Позвать в «${budget.name}»`, 40),
+          shareUrl(budget.inviteLink!, budget.name),
+        ),
+      ]);
+
+    await ctx.reply(lines.join('\n\n') + tail, {
+      parse_mode: 'HTML',
+      // «Открыть бюджет» есть всегда: раньше карточка личного бюджета
+      // оставалась вообще без кнопок и была тупиком.
+      ...Markup.inlineKeyboard([
+        ...shareRows,
+        [Markup.button.webApp('💰 Открыть бюджет', env.miniappUrl)],
+      ]),
+    });
   } catch (err) {
-    await ctx.reply(`Не получилось получить список семей: ${(err as Error).message}`);
+    await ctx.reply(`Не получилось получить список бюджетов: ${errorText(err)}`);
   }
 });
 
-/** /newfamily Название — создать семью прямо из чата. */
+/** /newbudget Название — создать семейный бюджет прямо из чата. */
 bot.command('newbudget', async (ctx) => {
   const name = (ctx.payload ?? '').trim();
   if (!name) {
-    await ctx.reply('Укажите название: /newfamily Семья Ивановых');
+    await ctx.reply('Укажите название: /newbudget Семья Ивановых');
     return;
   }
 
@@ -143,16 +166,27 @@ bot.command('newbudget', async (ctx) => {
     await ctx.reply(
       `Бюджет «${escapeHtml(budget.name)}» создан 🎉\n\n` +
         `Отправьте эту ссылку тем, кого хотите пригласить:\n${budget.inviteLink ?? budget.inviteCode ?? ''}`,
-      openAppKeyboard(),
+      // Имя экранировано — без parse_mode пользователь увидел бы «&amp;».
+      { parse_mode: 'HTML', ...openAppKeyboard() },
     );
   } catch (err) {
-    await ctx.reply(`Не удалось создать бюджет: ${(err as Error).message}`);
+    await ctx.reply(`Не удалось создать бюджет: ${errorText(err)}`);
   }
 });
 
-bot.on('message', (ctx) =>
-  ctx.reply('Учёт ведётся в приложении — откройте его кнопкой ниже.', openAppKeyboard()),
-);
+/*
+ * Ответ на всё остальное. Раньше одна и та же фраза приходила и на текст,
+ * и на стикер, и на голосовое — на стикер это выглядело нелепо.
+ */
+bot.on('message', (ctx) => {
+  const isText = 'text' in ctx.message;
+  return ctx.reply(
+    isText
+      ? 'Учёт ведётся в приложении — откройте его кнопкой ниже.'
+      : 'Такое я не понимаю. Записать операцию можно в приложении:',
+    openAppKeyboard(),
+  );
+});
 
 bot.catch((err) => console.error('[bot] необработанная ошибка:', err));
 
@@ -201,6 +235,13 @@ function shutdown(signal: 'SIGINT' | 'SIGTERM') {
 process.once('SIGINT', () => shutdown('SIGINT'));
 process.once('SIGTERM', () => shutdown('SIGTERM'));
 
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+/**
+ * Текст ошибки для пользователя.
+ *
+ * Сообщение приходит с сервера и подставляется в чат: без ограничения
+ * длинный ответ уехал бы целиком и мог не влезть в лимит Telegram.
+ */
+function errorText(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err);
+  return truncate(message.replace(/\s+/g, ' ').trim() || 'неизвестная ошибка', 200);
 }

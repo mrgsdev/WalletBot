@@ -1,4 +1,5 @@
 export * from './calc.js';
+export * from './text.js';
 
 /**
  * Общие типы и константы для Mini App, API и бота.

@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { ah } from '../lib/asyncHandler.js';
 import { buildWorkbook, type ExportRange } from '../services/excel.js';
 import { sendDocument } from '../services/telegram-send.js';
+import { escapeHtml, formatNumber } from '@budget/shared';
 import { visibleAccountIds } from '../services/scope.js';
 import { MONTHS_FULL, parseDate } from '../lib/dates.js';
 import { badRequest } from '../lib/errors.js';
@@ -65,7 +66,7 @@ exportRouter.post(
       req.user.telegramId,
       buffer,
       filename,
-      `📊 <b>${budgetName}</b>\n${period}\nОпераций: ${transactionCount}`,
+      `📊 <b>${escapeHtml(budgetName)}</b>\n${period}\nОпераций: ${formatNumber(transactionCount)}`,
     );
 
     res.json({ ok: true, filename, transactionCount });

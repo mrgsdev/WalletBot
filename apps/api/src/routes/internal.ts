@@ -1,8 +1,9 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { ah } from '../lib/asyncHandler.js';
 import { env } from '../lib/env.js';
-import { forbidden } from '../lib/errors.js';
+import { badRequest, forbidden } from '../lib/errors.js';
 import { createBudget, inviteLink, joinByCode, listBudgets } from '../services/budgets.js';
 import { ensureUser, notifyAdminAboutNewUser } from '../services/users.js';
 import { dueRecurring, markDailySent, usersToRemind } from '../services/reminders.js';
@@ -60,15 +61,37 @@ internalRouter.post(
   }),
 );
 
+const botBudgetSchema = z.object({
+  name: z.string().min(1).max(60),
+  kind: z.enum(['personal', 'family']).catch('family'),
+});
+
 /** Создание бюджета из чата бота. */
 internalRouter.post(
   '/budgets/create',
   ah(async (req, res) => {
     const { telegramId, name, kind } = req.body ?? {};
+
+    /*
+     * Те же ограничения, что и в POST /budgets для мини-аппа.
+     * Раньше их здесь не было, и через чат бота можно было завести
+     * бюджет с названием на тысячи символов — после чего список бюджетов
+     * и выгрузка переставали отправляться: сообщение не влезало в лимит
+     * Telegram, и чинить это было уже нечем.
+     *
+     * Переносы строк схлопываем: в карточке имя стоит заголовком,
+     * и многострочное название разваливало вёрстку.
+     */
+    const cleaned = String(name ?? '').replace(/\s+/g, ' ').trim();
+    const parsed = botBudgetSchema.safeParse({ name: cleaned, kind });
+    if (!parsed.success) {
+      throw badRequest('Название нужно от 1 до 60 символов');
+    }
+
     const user = await ensureUser({ id: Number(telegramId) });
     const budget = await createBudget(user.id, {
-      name: String(name ?? 'Новый бюджет'),
-      kind: kind === 'personal' ? 'personal' : 'family',
+      name: parsed.data.name,
+      kind: parsed.data.kind,
     });
     res.json({
       budgetId: budget!.id,

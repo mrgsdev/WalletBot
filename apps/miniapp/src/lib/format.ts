@@ -1,25 +1,11 @@
-import { currencySymbol } from '@budget/shared';
+import { currencySymbol, formatMoney, formatNumber } from '@budget/shared';
 
-const numberFormat = new Intl.NumberFormat('ru-RU', {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-const numberFormat2 = new Intl.NumberFormat('ru-RU', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-/** «1 234,56» — с неразрывными пробелами, как в iOS. */
-export function formatNumber(value: number, alwaysCents = false): string {
-  return (alwaysCents ? numberFormat2 : numberFormat).format(value);
-}
-
-/** «₽1 234,56»: символ валюты идёт перед числом, как на референсах. */
-export function formatMoney(value: number, currency: string, alwaysCents = false): string {
-  const sign = value < 0 ? '−' : '';
-  return `${sign}${currencySymbol(currency)}${formatNumber(Math.abs(value), alwaysCents)}`;
-}
+/*
+ * Формат денег живёт в @budget/shared: его используют и бот в напоминаниях,
+ * и сервер в подписи к выгрузке. Пока копия была здесь, одна и та же сумма
+ * выглядела в трёх местах по-разному.
+ */
+export { formatMoney, formatNumber };
 
 /**
  * Разбирает сумму на части для «крупной» вёрстки из редизайна:

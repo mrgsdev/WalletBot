@@ -1,5 +1,6 @@
 import type { Telegraf } from 'telegraf';
 import { Markup } from 'telegraf';
+import { escapeHtml, formatMoney } from '@budget/shared';
 import { api } from './api.js';
 import { env } from './env.js';
 import { log, logError } from './logging.js';
@@ -35,7 +36,7 @@ async function sendRecurring(bot: Telegraf) {
           item.telegramId,
           `${icon} Напоминание о регулярном платеже\n\n` +
             `<b>${escapeHtml(item.title)}</b>\n` +
-            `${item.amount} ${item.currency} · ${escapeHtml(item.accountName)}\n\n` +
+            `${formatMoney(item.amount, item.currency)} · ${escapeHtml(item.accountName)}\n\n` +
             'Уже оплатили? Запишите операцию, чтобы бюджет сошёлся.',
           {
             parse_mode: 'HTML',
@@ -77,8 +78,4 @@ async function sendDaily(bot: Telegraf, now: Date) {
   } catch (err) {
     console.error('[bot] daily:', (err as Error).message);
   }
-}
-
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
