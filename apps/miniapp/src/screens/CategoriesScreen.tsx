@@ -251,7 +251,7 @@ function CategoryEditor({
         // На категорию ссылаются операции — сервер её не удалил.
         tg.haptic.warning();
         setConfirmDelete(false);
-        setError('В категории есть операции — удалить нельзя. Она осталась в архиве.');
+        setError('В категории есть операции, удалить нельзя. Она осталась в архиве.');
         return;
       }
       tg.haptic.success();

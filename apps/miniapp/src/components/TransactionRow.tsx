@@ -30,7 +30,7 @@ export function TransactionRow({
   const amountColor = isTransfer ? 'text-muted' : isIncome ? 'text-positive' : 'text-content';
 
   const title = isTransfer
-    ? `${transaction.accountName} → ${transaction.toAccountName ?? '—'}`
+    ? `${transaction.accountName} → ${transaction.toAccountName ?? 'счёт удалён'}`
     : transaction.categoryName ?? 'Без категории';
 
   const subtitleParts = [

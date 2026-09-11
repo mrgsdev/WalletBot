@@ -118,7 +118,7 @@ export async function leaveBudget(userId: number, budgetId: number) {
   const budget = await prisma.budget.findUnique({ where: { id: budgetId } });
   if (!budget) throw notFound('Бюджет не найден');
   if (budget.createdById === userId) {
-    throw badRequest('Создатель не может выйти — бюджет нужно удалить');
+    throw badRequest('Создатель не может выйти, бюджет нужно удалить');
   }
 
   const membership = await prisma.budgetMember.findUnique({

@@ -63,7 +63,7 @@ export function BudgetsScreen() {
               iconBare
               icon={<img src={personalIcon} alt="" className="h-10 w-10 object-contain" />}
               label="Создать личный бюджет"
-              hint="Отдельный кошелёк — например, для бизнеса или отпуска"
+              hint="Отдельный кошелёк, например для бизнеса или отпуска"
               onClick={() => setCreating('personal')}
             />
             <ActionRow
@@ -426,7 +426,7 @@ function DetailsSheet({ budget, onClose }: { budget: BudgetDto | null; onClose: 
                 </div>
                 <p className="mt-1 text-[13px] leading-snug text-muted">
                   Участник потеряет доступ к бюджету и его счетам. Операции, которые он
-                  добавил, останутся в истории — иначе балансы разойдутся. Вернуться он
+                  добавил, останутся в истории, иначе балансы разойдутся. Вернуться он
                   сможет только по новому приглашению.
                 </p>
                 <div className="mt-3 flex gap-2">

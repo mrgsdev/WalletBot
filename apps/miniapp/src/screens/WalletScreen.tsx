@@ -96,7 +96,7 @@ export function WalletScreen({ onTransfer }: { onTransfer: () => void }) {
             iconBare
             icon={<img src={ACCOUNT_ICON_IMAGES['💳']} alt="" className="h-20 w-20 object-contain" />}
             title="Нет счетов"
-            hint="Создайте счёт — карту, наличные или счёт в банке."
+            hint="Создайте счёт: карту, наличные или счёт в банке."
             action={
               <button
                 type="button"

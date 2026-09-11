@@ -492,12 +492,22 @@ export function useDemoStatus() {
 }
 
 /** Отправляет выгрузку файлом в чат с ботом. */
+export type ExportFormat = 'xlsx' | 'pdf';
+
 export function useSendExport() {
   return useMutation({
-    mutationFn: (range: { year: number; fromMonth: number; toMonth: number }) =>
-      apiFetch<{ ok: true; filename: string; transactionCount: number }>('/export/send', {
-        method: 'POST',
-        body: range,
-      }),
+    mutationFn: ({
+      format,
+      ...range
+    }: {
+      year: number;
+      fromMonth: number;
+      toMonth: number;
+      format: ExportFormat;
+    }) =>
+      apiFetch<{ ok: true; filename: string; transactionCount: number }>(
+        format === 'pdf' ? '/export/send-pdf' : '/export/send',
+        { method: 'POST', body: range },
+      ),
   });
 }

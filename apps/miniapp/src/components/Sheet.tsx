@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, type PanInfo } from 'framer-motion';
 import { type ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { tg } from '../lib/telegram';
@@ -10,6 +10,11 @@ interface Props {
   children: ReactNode;
   /** Высокий лист занимает почти весь экран (например, сетка категорий). */
   tall?: boolean;
+  /**
+   * Свайп вниз закрывает лист. Отключаем там, где вертикальный жест нужен
+   * самому содержимому — например барабану выбора периода.
+   */
+  dragToClose?: boolean;
 }
 
 /**
@@ -44,7 +49,7 @@ function assertScrollSane() {
 }
 
 /** Модальный лист, выезжающий снизу, — базовый паттерн навигации приложения. */
-export function Sheet({ open, onClose, title, children, tall = false }: Props) {
+export function Sheet({ open, onClose, title, children, tall = false, dragToClose = true }: Props) {
   useEffect(() => {
     if (!open) {
       assertScrollSane();
@@ -61,6 +66,17 @@ export function Sheet({ open, onClose, title, children, tall = false }: Props) {
     if (!open) return;
     return tg.pushBackHandler(onClose);
   }, [open, onClose]);
+
+  const dragProps = dragToClose
+    ? {
+        drag: 'y' as const,
+        dragConstraints: { top: 0, bottom: 0 },
+        dragElastic: { top: 0, bottom: 0.4 },
+        onDragEnd: (_: unknown, info: PanInfo) => {
+          if (info.offset.y > 120 || info.velocity.y > 700) onClose();
+        },
+      }
+    : {};
 
   return createPortal(
     <AnimatePresence>
@@ -80,12 +96,7 @@ export function Sheet({ open, onClose, title, children, tall = false }: Props) {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-            drag="y"
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.4 }}
-            onDragEnd={(_, info) => {
-              if (info.offset.y > 120 || info.velocity.y > 700) onClose();
-            }}
+            {...dragProps}
           >
             <div className="flex justify-center pt-3">
               <div className="h-1 w-10 rounded-full bg-muted/40" />

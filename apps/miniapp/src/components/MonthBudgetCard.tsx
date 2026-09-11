@@ -106,7 +106,7 @@ export function MonthBudgetCard({
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-semibold">Бюджет на месяц</span>
             <span className="block text-[13px] text-muted">
-              Задайте лимит — покажу, сколько можно тратить в день
+              Задайте лимит, и я покажу, сколько можно тратить в день
             </span>
           </span>
           <ChevronRight size={18} className="shrink-0 text-muted" />

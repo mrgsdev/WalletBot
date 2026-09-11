@@ -319,7 +319,7 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
                       {account?.name ?? 'Счёт'}
                     </span>
                     <span className="block truncate text-[12px] leading-tight text-muted">
-                      {account ? formatMoneyFit(account.balance, account.currency, 16) : '—'}
+                      {account ? formatMoneyFit(account.balance, account.currency, 16) : '…'}
                     </span>
                   </span>
                 </button>

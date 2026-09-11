@@ -119,13 +119,13 @@ export function HomeScreen({
               <span className="flex items-center gap-1 text-positive">
                 <ArrowDownLeft size={13} />
                 <span className="tabular font-medium">
-                  {summary ? formatMoneyFit(summary.income, summary.currency, 12) : '—'}
+                  {summary ? formatMoneyFit(summary.income, summary.currency, 12) : '…'}
                 </span>
               </span>
               <span className="flex items-center gap-1 text-negative">
                 <ArrowUpRight size={13} />
                 <span className="tabular font-medium">
-                  {summary ? formatMoneyFit(summary.expense, summary.currency, 12) : '—'}
+                  {summary ? formatMoneyFit(summary.expense, summary.currency, 12) : '…'}
                 </span>
               </span>
               <ChevronRight size={14} className="text-muted" />
@@ -268,8 +268,8 @@ export function HomeScreen({
             title={filter ? 'Здесь пока пусто' : 'Пока пусто'}
             hint={
               filter
-                ? 'В этом фильтре операций нет — попробуйте другой.'
-                : 'Добавьте первую операцию — она появится здесь.'
+                ? 'В этом фильтре операций нет, попробуйте другой.'
+                : 'Добавьте первую операцию, она появится здесь.'
             }
             action={
               filter ? undefined : (

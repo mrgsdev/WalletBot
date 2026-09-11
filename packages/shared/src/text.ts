@@ -43,6 +43,18 @@ export function formatMoney(value: number, currency: string, alwaysCents = false
   return `${sign}${currencySymbol(currency)}${formatNumber(Math.abs(value), alwaysCents)}`;
 }
 
+/**
+ * «12 345,67 RUB» — запись для документов.
+ *
+ * В PDF символы валют приходится обходить стороной: шрифт с полной
+ * поддержкой ₾, ₸, ֏ и ฿ пришлось бы везти отдельно, а без него они
+ * печатаются пустыми квадратами. Код валюты читается везде одинаково.
+ */
+export function formatMoneyCode(value: number, currency: string, alwaysCents = false): string {
+  const sign = value < 0 ? '−' : '';
+  return `${sign}${formatNumber(Math.abs(value), alwaysCents)} ${currency.toUpperCase()}`;
+}
+
 /** Обрезает длинный текст, чтобы он не распирал сообщение. */
 export function truncate(text: string, max: number): string {
   return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;

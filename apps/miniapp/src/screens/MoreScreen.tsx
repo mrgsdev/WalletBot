@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronRight, Moon,
@@ -16,10 +16,11 @@ import currencyIcon from '../assets/currency.png';
 import membersIcon from '../assets/members.png';
 import { Sheet } from '../components/Sheet';
 import { Segmented } from '../components/Segmented';
+import { Wheel, WheelGroup, type WheelOption } from '../components/Wheel';
 import { TOUR, TourTarget, useTour } from '../components/Tour';
 import { Skeleton } from '../components/ui';
 import { BudgetSwitcher } from '../components/BudgetSwitcher';
-import { useSendExport, useSession, useUpdateSettings } from '../lib/queries';
+import { type ExportFormat, useSendExport, useSession, useUpdateSettings } from '../lib/queries';
 import { useAppStore } from '../store/app';
 import { MONTHS_NOM } from '../lib/format';
 import { tg } from '../lib/telegram';
@@ -112,8 +113,8 @@ export function MoreScreen() {
               <Row
                 iconBare
                 icon={<MenuIcon src={exportIcon} />}
-                label="Выгрузить в Excel"
-                hint="Файл придёт сообщением от бота"
+                label="Выгрузить операции"
+                hint="Excel или PDF, придёт сообщением от бота"
                 onClick={() => setSheet('export')}
               />
             </TourTarget>
@@ -177,7 +178,7 @@ function ThemeSheet({ open, onClose, current }: { open: boolean; onClose: () => 
         ))}
       </div>
       <p className="mt-3 text-[13px] leading-snug text-muted">
-        «Как в системе» подстраивается под тему Telegram, а в браузере — под настройку устройства.
+        «Как в системе» подстраивается под тему Telegram, а в браузере под настройку устройства.
       </p>
       <div className="mt-4 flex items-center gap-2 rounded-2xl bg-elevated/50 p-3">
         <Palette size={16} className="shrink-0 text-muted" />
@@ -226,9 +227,11 @@ function ExportSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [mode, setMode] = useState<'month' | 'year'>('month');
+  const [format, setFormat] = useState<ExportFormat>('xlsx');
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [done, setDone] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [periodOpen, setPeriodOpen] = useState(false);
 
   const send = useSendExport();
 
@@ -240,6 +243,7 @@ function ExportSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
         year,
         fromMonth: mode === 'year' ? 1 : month,
         toMonth: mode === 'year' ? 12 : month,
+        format,
       },
       {
         onSuccess: (result) => {
@@ -255,77 +259,148 @@ function ExportSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
   };
 
   return (
-    <Sheet open={open} onClose={onClose} title="Выгрузка в Excel">
+    <>
+      <Sheet open={open} onClose={onClose} title="Выгрузка">
+        <div className="space-y-3 pt-1">
+          <div className="flex justify-center">
+            <Segmented
+              options={[
+                { value: 'xlsx', label: 'Excel' },
+                { value: 'pdf', label: 'PDF' },
+              ]}
+              value={format}
+              onChange={setFormat}
+            />
+          </div>
+
+          <div className="flex justify-center">
+            <Segmented
+              options={[
+                { value: 'month', label: 'Месяц' },
+                { value: 'year', label: 'Год' },
+              ]}
+              value={mode}
+              onChange={setMode}
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              tg.haptic.light();
+              setPeriodOpen(true);
+            }}
+            className="pressable flex w-full items-center justify-between rounded-2xl bg-elevated px-4 py-3.5 text-left"
+          >
+            <span className="text-[15px] text-muted">
+              {mode === 'year' ? 'Выбрать год' : 'Выбрать месяц'}
+            </span>
+            <span className="flex items-center gap-1 text-[16px] font-medium">
+              {mode === 'year' ? year : `${MONTHS_NOM[month - 1]} ${year}`}
+              <ChevronRight size={17} className="text-muted" />
+            </span>
+          </button>
+
+          <div className="rounded-2xl bg-elevated/50 p-3.5 text-[13px] leading-snug text-muted">
+            Файл придёт сообщением от бота: в приложении Telegram скачивание работает ненадёжно.{' '}
+            {format === 'pdf'
+              ? 'В PDF готовый отчёт: итоги, расходы по категориям и список операций.'
+              : 'В Excel два листа: план и факт по категориям, и полный список операций.'}
+          </div>
+
+          {done && (
+            <div className="rounded-2xl bg-positive/15 p-3.5 text-center text-[14px] text-positive">
+              {done}. Проверьте чат с ботом
+            </div>
+          )}
+          {error && (
+            <div className="rounded-2xl bg-negative/15 p-3.5 text-center text-[14px] text-negative">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={submit}
+            disabled={send.isPending}
+            className="pressable w-full rounded-2xl bg-content px-4 py-3.5 text-[16px] font-semibold text-ink disabled:opacity-50"
+          >
+            {send.isPending ? 'Готовлю файл…' : 'Отправить в чат'}
+          </button>
+        </div>
+      </Sheet>
+
+      <PeriodSheet
+        open={periodOpen}
+        onClose={() => setPeriodOpen(false)}
+        withMonth={mode === 'month'}
+        month={month}
+        year={year}
+        onMonth={setMonth}
+        onYear={setYear}
+      />
+    </>
+  );
+}
+
+/** Барабан выбора периода — как нативный пикер даты. */
+function PeriodSheet({
+  open,
+  onClose,
+  withMonth,
+  month,
+  year,
+  onMonth,
+  onYear,
+}: {
+  open: boolean;
+  onClose: () => void;
+  withMonth: boolean;
+  month: number;
+  year: number;
+  onMonth: (month: number) => void;
+  onYear: (year: number) => void;
+}) {
+  const months: WheelOption<number>[] = useMemo(
+    () => MONTHS_NOM.map((name, index) => ({ value: index + 1, label: name })),
+    [],
+  );
+
+  /* Пять прошлых лет и следующий — дальше выгружать нечего. */
+  const years: WheelOption<number>[] = useMemo(() => {
+    const current = new Date().getFullYear();
+    return Array.from({ length: 7 }, (_, i) => current - 5 + i).map((value) => ({
+      value,
+      label: String(value),
+    }));
+  }, []);
+
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={withMonth ? 'Месяц и год' : 'Год'}
+      dragToClose={false}
+    >
       <div className="space-y-3 pt-1">
-        <div className="flex justify-center">
-          <Segmented
-            options={[
-              { value: 'month', label: 'Месяц' },
-              { value: 'year', label: 'Год' },
-            ]}
-            value={mode}
-            onChange={setMode}
+        <WheelGroup>
+          {withMonth && (
+            <Wheel options={months} value={month} onChange={onMonth} className="flex-[3]" />
+          )}
+          <Wheel
+            options={years}
+            value={year}
+            onChange={onYear}
+            className={withMonth ? 'flex-[2]' : 'flex-1'}
           />
-        </div>
-
-        {mode === 'month' && (
-          <div className="scroll-x flex gap-1.5 pb-1">
-            {MONTHS_NOM.map((name, index) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => {
-                  tg.haptic.select();
-                  setMonth(index + 1);
-                }}
-                className={`pressable shrink-0 rounded-full px-3.5 py-2 text-[14px] ${
-                  month === index + 1 ? 'bg-content text-ink' : 'bg-elevated text-muted'
-                }`}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-center justify-center gap-2">
-          {[year - 1, year, year + 1].map((y) => (
-            <button
-              key={y}
-              type="button"
-              onClick={() => setYear(y)}
-              className={`pressable rounded-full px-4 py-2 text-[14px] ${
-                y === year ? 'bg-content text-ink' : 'bg-elevated text-muted'
-              }`}
-            >
-              {y}
-            </button>
-          ))}
-        </div>
-
-        <div className="rounded-2xl bg-elevated/50 p-3.5 text-[13px] leading-snug text-muted">
-          Файл придёт сообщением от бота — в приложении Telegram скачивание работает
-          ненадёжно. Внутри два листа: план и факт по категориям, и полный список операций.
-        </div>
-
-        {done && (
-          <div className="rounded-2xl bg-positive/15 p-3.5 text-center text-[14px] text-positive">
-            {done} — проверьте чат с ботом
-          </div>
-        )}
-        {error && (
-          <div className="rounded-2xl bg-negative/15 p-3.5 text-center text-[14px] text-negative">
-            {error}
-          </div>
-        )}
+        </WheelGroup>
 
         <button
           type="button"
-          onClick={submit}
-          disabled={send.isPending}
-          className="pressable w-full rounded-2xl bg-content px-4 py-3.5 text-[16px] font-semibold text-ink disabled:opacity-50"
+          onClick={onClose}
+          className="pressable w-full rounded-2xl bg-content px-4 py-3.5 text-[16px] font-semibold text-ink"
         >
-          {send.isPending ? 'Готовлю файл…' : 'Отправить в чат'}
+          Готово
         </button>
       </div>
     </Sheet>

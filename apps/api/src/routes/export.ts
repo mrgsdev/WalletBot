@@ -2,13 +2,21 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { ah } from '../lib/asyncHandler.js';
 import { buildWorkbook, type ExportRange } from '../services/excel.js';
+import { buildReportPdf } from '../services/pdf.js';
 import { sendDocument } from '../services/telegram-send.js';
 import { escapeHtml, formatNumber } from '@budget/shared';
 import { visibleAccountIds } from '../services/scope.js';
-import { MONTHS_FULL, parseDate } from '../lib/dates.js';
+import { MONTHS_FULL, MONTHS_GENITIVE, parseDate } from '../lib/dates.js';
 import { badRequest } from '../lib/errors.js';
 
 export const exportRouter = Router();
+
+function periodTitle(range: ExportRange): string {
+  const { year, fromMonth, toMonth } = range;
+  return fromMonth === toMonth
+    ? `${MONTHS_FULL[fromMonth - 1]} ${year}`
+    : `с ${MONTHS_GENITIVE[fromMonth - 1]} по ${MONTHS_FULL[toMonth - 1].toLowerCase()} ${year}`;
+}
 
 function rangeFromQuery(query: Record<string, unknown>): ExportRange {
   const now = new Date();
@@ -57,19 +65,54 @@ exportRouter.post(
 
     const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
 
-    const period =
-      range.fromMonth === range.toMonth
-        ? `${MONTHS_FULL[range.fromMonth - 1]} ${range.year}`
-        : `${MONTHS_FULL[range.fromMonth - 1]} — ${MONTHS_FULL[range.toMonth - 1]} ${range.year}`;
+    await sendDocument(
+      req.user.telegramId,
+      buffer,
+      filename,
+      `📊 <b>${escapeHtml(budgetName)}</b>\n${periodTitle(range)}\nОпераций: ${formatNumber(transactionCount)}`,
+    );
+
+    res.json({ ok: true, filename, transactionCount });
+  }),
+);
+
+/** Отчёт в PDF прямо в чат с ботом. */
+exportRouter.post(
+  '/send-pdf',
+  ah(async (req, res) => {
+    const range = rangeFromQuery(req.body ?? {});
+    const { buffer, filename, budgetName, transactionCount } = await buildReportPdf(
+      req.user,
+      req.scope,
+      range,
+    );
+
+    if (transactionCount === 0) {
+      throw badRequest('За выбранный период нет операций');
+    }
 
     await sendDocument(
       req.user.telegramId,
       buffer,
       filename,
-      `📊 <b>${escapeHtml(budgetName)}</b>\n${period}\nОпераций: ${formatNumber(transactionCount)}`,
+      `📄 <b>${escapeHtml(budgetName)}</b>\n${periodTitle(range)}\nОпераций: ${formatNumber(transactionCount)}`,
+      'application/pdf',
     );
 
     res.json({ ok: true, filename, transactionCount });
+  }),
+);
+
+/** Скачивание PDF напрямую. */
+exportRouter.get(
+  '/pdf',
+  ah(async (req, res) => {
+    const range = rangeFromQuery(req.query as Record<string, unknown>);
+    const { buffer, filename } = await buildReportPdf(req.user, req.scope, range);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+    res.end(buffer);
   }),
 );
 

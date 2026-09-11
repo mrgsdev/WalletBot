@@ -65,7 +65,7 @@ export function buildPeriodTabs(kind: PeriodKind, count = 12): PeriodTab[] {
       label:
         i === 0
           ? 'Эта неделя'
-          : `${monday.getUTCDate()}–${sunday.getUTCDate()} ${MONTHS_SHORT[
+          : `с ${monday.getUTCDate()} по ${sunday.getUTCDate()} ${MONTHS_SHORT[
               sunday.getUTCMonth()
             ].toLowerCase()}`,
       anchor: thursday,

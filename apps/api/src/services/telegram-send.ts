@@ -55,6 +55,8 @@ export async function sendDocument(
   file: Buffer,
   filename: string,
   caption?: string,
+  /* MIME задаём явно: Telegram по нему выбирает превью и иконку файла. */
+  mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ) {
   const form = new FormData();
   form.append('chat_id', telegramId);
@@ -64,9 +66,7 @@ export async function sendDocument(
   }
   form.append(
     'document',
-    new Blob([new Uint8Array(file)], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    }),
+    new Blob([new Uint8Array(file)], { type: mimeType }),
     filename,
   );
 

@@ -115,7 +115,7 @@ export function HistoryScreen({ onEdit }: { onEdit: (transaction: TransactionDto
           hint={
             activeFilters
               ? 'Попробуйте изменить фильтры.'
-              : 'Здесь появятся все операции — по мере того как вы их добавляете.'
+              : 'Здесь появятся все операции, которые вы добавите.'
           }
           action={
             activeFilters ? (
@@ -207,14 +207,14 @@ export function HistoryScreen({ onEdit }: { onEdit: (transaction: TransactionDto
                 type="date"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
-                className="flex-1 rounded-2xl bg-elevated px-4 py-3 text-[15px] outline-none"
+                className="min-w-0 flex-1 rounded-2xl bg-elevated px-3 py-3 text-[15px] outline-none"
               />
-              <span className="text-muted">—</span>
+              <span className="text-muted">по</span>
               <input
                 type="date"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
-                className="flex-1 rounded-2xl bg-elevated px-4 py-3 text-[15px] outline-none"
+                className="min-w-0 flex-1 rounded-2xl bg-elevated px-3 py-3 text-[15px] outline-none"
               />
             </div>
           </div>
