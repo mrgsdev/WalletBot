@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MAX_AMOUNT,
   evaluateExpression,
   formatExpression,
   hasOperator,
@@ -104,5 +105,26 @@ describe('pushToken: копейки', () => {
 
   it('запятая в пустом поле даёт «0,» — человек видит, что перешёл к копейкам', () => {
     expect(pushToken('', ',')).toBe('0.');
+  });
+});
+
+describe('pushToken: предел суммы', () => {
+  it('не даёт набрать больше девяти знаков в целой части', () => {
+    let expr = '';
+    for (let i = 0; i < 14; i++) expr = pushToken(expr, '2');
+    expect(expr).toBe('222222222');
+  });
+
+  it('максимум с копейками набирается целиком', () => {
+    let expr = '';
+    for (const t of ['9','9','9','9','9','9','9','9','9',',','9','9']) expr = pushToken(expr, t);
+    expect(expr).toBe('999999999.99');
+    expect(evaluateExpression(expr)).toBe(MAX_AMOUNT);
+  });
+
+  it('предел действует для каждого слагаемого отдельно', () => {
+    let expr = '';
+    for (const t of ['1','2','3','+','9','9','9','9','9','9','9','9','9','9']) expr = pushToken(expr, t);
+    expect(expr).toBe('123+999999999');
   });
 });

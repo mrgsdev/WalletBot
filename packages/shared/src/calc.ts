@@ -97,6 +97,17 @@ export function hasOperator(input: string): boolean {
   return /[+\-*/]/.test(expr.slice(1));
 }
 
+/**
+ * Максимальная сумма одной операции: 999 999 999,00.
+ *
+ * Ограничение не бухгалтерское, а интерфейсное: числа длиннее уже не
+ * помещаются на табло калькулятора и в карточки, а практического смысла
+ * в них нет — это почти всегда опечатка или проверка на прочность.
+ */
+export const MAX_AMOUNT = 999_999_999.99;
+/** Столько знаков помещается в целой части. */
+const MAX_WHOLE_DIGITS = 9;
+
 /** Добавляет символ к выражению, не допуская двух операторов подряд и двух точек в числе. */
 export function pushToken(expression: string, token: string): string {
   const normalized = normalizeExpression(token);
@@ -122,6 +133,10 @@ export function pushToken(expression: string, token: string): string {
    */
   const dot = lastNumber.indexOf('.');
   if (dot !== -1 && lastNumber.length - dot - 1 >= 2) return expression;
+
+  // Целая часть не длиннее девяти знаков — это и есть предел 999 999 999.
+  const whole = dot === -1 ? lastNumber : lastNumber.slice(0, dot);
+  if (dot === -1 && whole.replace('-', '').length >= MAX_WHOLE_DIGITS) return expression;
 
   // Не даём набирать «007».
   if (lastNumber === '0') return expression.slice(0, -1) + normalized;

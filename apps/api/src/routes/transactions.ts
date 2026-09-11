@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { MAX_AMOUNT } from '@budget/shared';
 import { prisma } from '../lib/prisma.js';
 import { ah } from '../lib/asyncHandler.js';
 import { transactionDto } from '../lib/serialize.js';
@@ -73,7 +74,7 @@ const inputSchema = z.object({
   accountId: z.number().int().positive(),
   toAccountId: z.number().int().positive().nullable().optional(),
   categoryId: z.number().int().positive().nullable().optional(),
-  amount: z.number().positive(),
+  amount: z.number().positive().max(MAX_AMOUNT),
   currency: z.string().length(3),
   date: z.string(),
   comment: z.string().max(500).nullable().optional(),

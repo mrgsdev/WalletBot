@@ -17,10 +17,11 @@ import {
   evaluateExpression,
   formatExpression,
   hasOperator,
+  MAX_AMOUNT,
   pushToken,
 } from '@budget/shared';
 import { useAccounts, useCategories, useDeleteTransaction, useRates, useSaveTransaction } from '../lib/queries';
-import { formatMoney, formatNumber, formatDateLabel, toDateInputValue } from '../lib/format';
+import { fontSizeForLength, formatMoney, formatMoneyFit, formatNumber, formatDateLabel, toDateInputValue } from '../lib/format';
 import { tg } from '../lib/telegram';
 import { emitTourEvent } from '../lib/tourBus';
 import { AccountIcon } from '../components/AccountIcon';
@@ -167,8 +168,11 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
     setExpression('');
   };
 
+  const overLimit = amount > MAX_AMOUNT;
+
   const canSave =
     amount > 0 &&
+    !overLimit &&
     accountId !== null &&
     (type === 'transfer' ? toAccountId !== null && toAccountId !== accountId : categoryId !== null);
 
@@ -301,7 +305,7 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
                     tg.haptic.light();
                     setPicker('account');
                   }}
-                  className="pressable flex items-center gap-2.5 rounded-full bg-elevated/80 py-2 pl-2 pr-4"
+                  className="pressable flex max-w-full items-center gap-2.5 rounded-full bg-elevated/80 py-2 pl-2 pr-4"
                 >
                   <AccountIcon
                     icon={account?.icon ?? '💳'}
@@ -309,12 +313,13 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
                     className="h-9 w-9"
                     emojiClassName="text-[16px]"
                   />
-                  <span className="text-left">
-                    <span className="block text-[14px] font-semibold leading-tight">
+                  {/* min-w-0 + truncate: длинное имя счёта иначе распирает чип. */}
+                  <span className="min-w-0 text-left">
+                    <span className="block truncate text-[14px] font-semibold leading-tight">
                       {account?.name ?? 'Счёт'}
                     </span>
-                    <span className="block text-[12px] leading-tight text-muted">
-                      {account ? formatMoney(account.balance, account.currency) : '—'}
+                    <span className="block truncate text-[12px] leading-tight text-muted">
+                      {account ? formatMoneyFit(account.balance, account.currency, 16) : '—'}
                     </span>
                   </span>
                 </button>
@@ -349,18 +354,37 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
                 )}
               </AnimatePresence>
 
-              <div className="tabular flex items-baseline justify-center">
-                <span className="text-[44px] font-semibold leading-none text-muted">{symbol}</span>
+              <div
+                className="tabular flex items-baseline justify-center"
+                /*
+                 * Даже разрешённый максимум «999 999 999,99» не влезает
+                 * на табло в 56px, поэтому кегль зависит от длины.
+                 */
+                style={{ fontSize: fontSizeForLength(displayAmount, 56, 10, 30) }}
+              >
+                <span className="font-semibold leading-none text-muted" style={{ fontSize: '0.78em' }}>
+                  {symbol}
+                </span>
                 <motion.span
                   key={displayAmount}
                   initial={{ scale: 0.96, opacity: 0.6 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.12 }}
-                  className="text-[56px] font-semibold leading-none tracking-tight"
+                  className="font-semibold leading-none tracking-tight"
                 >
                   {displayAmount}
                 </motion.span>
               </div>
+
+              {overLimit && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="tabular rounded-full bg-negative/10 px-3 py-1 text-[13px] font-medium text-negative"
+                >
+                  Максимум {formatMoney(MAX_AMOUNT, currency, true)}
+                </motion.div>
+              )}
 
               <AnimatePresence>
                 {converted && (
