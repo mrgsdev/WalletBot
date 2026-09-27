@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { MAX_AMOUNT } from '@budget/shared';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '../components/CategoryIcon';
@@ -47,7 +48,22 @@ export function PlansScreen() {
 
   const commit = (categoryId: number, value: string) => {
     const parsed = Number(value.replace(/\s/g, '').replace(',', '.'));
-    if (!Number.isFinite(parsed) || parsed < 0) return;
+
+    /*
+     * Раньше при нечисловом вводе мы просто выходили: поле продолжало
+     * показывать «abc», хотя на сервере оставалось старое значение.
+     * Теперь возвращаем поле к сохранённому плану.
+     */
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > MAX_AMOUNT) {
+      tg.haptic.error();
+      setDraft((prev) => {
+        const next = { ...prev };
+        delete next[categoryId];
+        return next;
+      });
+      return;
+    }
+
     savePlan.mutate({ categoryId, year, month, plannedAmount: parsed });
     tg.haptic.light();
   };

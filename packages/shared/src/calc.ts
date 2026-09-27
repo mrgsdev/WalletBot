@@ -90,6 +90,23 @@ export function evaluateExpression(input: string): number | null {
   return Math.round((result + Number.EPSILON) * 100) / 100;
 }
 
+/**
+ * Результат самой длинной законченной части выражения.
+ *
+ * Пока человек печатает, выражение регулярно оказывается незаконченным:
+ * «2+», «2,0 + 2,». evaluateExpression в такие моменты честно возвращает
+ * null, и на экране вместо набранной суммы появлялся ноль — будто ввод
+ * сбросился. Отрезаем незаконченный хвост и считаем то, что уже набрано.
+ */
+export function evaluatePartial(input: string): number | null {
+  const expr = normalizeExpression(input);
+  for (let end = expr.length; end > 0; end--) {
+    const value = evaluateExpression(expr.slice(0, end));
+    if (value !== null) return value;
+  }
+  return null;
+}
+
 /** Содержит ли выражение хотя бы один оператор — нужно, чтобы решить, показывать ли строку выражения. */
 export function hasOperator(input: string): boolean {
   const expr = normalizeExpression(input);

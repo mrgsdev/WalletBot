@@ -5,7 +5,7 @@ import { ah } from '../lib/asyncHandler.js';
 import { categoryWhere, visibleAccountIds } from '../services/scope.js';
 import { getUsdRates, round2 } from '../services/currency.js';
 import { badRequest, notFound } from '../lib/errors.js';
-import type { BudgetPlanDto } from '@budget/shared';
+import { MAX_AMOUNT, type BudgetPlanDto } from '@budget/shared';
 
 export const plansRouter = Router();
 
@@ -80,7 +80,7 @@ const putSchema = z.object({
   categoryId: z.number().int().positive(),
   year: z.number().int().min(2000).max(2100),
   month: z.number().int().min(1).max(12),
-  plannedAmount: z.number().min(0),
+  plannedAmount: z.number().min(0).max(MAX_AMOUNT),
 });
 
 /** Установка плана по категории на месяц. */

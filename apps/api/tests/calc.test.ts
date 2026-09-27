@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MAX_AMOUNT,
   evaluateExpression,
+  evaluatePartial,
   formatExpression,
   hasOperator,
   pushToken,
@@ -126,5 +127,37 @@ describe('pushToken: предел суммы', () => {
     let expr = '';
     for (const t of ['1','2','3','+','9','9','9','9','9','9','9','9','9','9']) expr = pushToken(expr, t);
     expect(expr).toBe('123+999999999');
+  });
+});
+
+describe('evaluatePartial', () => {
+  it('считает по законченной части, пока выражение набирается', () => {
+    // На экране была сумма, человек нажал «,» — и она не должна исчезать.
+    expect(evaluatePartial('2.0+2.')).toBe(4);
+    expect(evaluatePartial('2+')).toBe(2);
+    expect(evaluatePartial('2+3.')).toBe(5);
+    expect(evaluatePartial('100-20.')).toBe(80);
+    expect(evaluatePartial('5*')).toBe(5);
+    expect(evaluatePartial('2+3*')).toBe(5);
+  });
+
+  it('на законченном выражении совпадает с обычным разбором', () => {
+    for (const expr of ['2+3', '2+3.5', '5*3', '10/4', '7']) {
+      expect(evaluatePartial(expr)).toBe(evaluateExpression(expr));
+    }
+  });
+
+  it('понимает запятую как десятичный разделитель', () => {
+    expect(evaluatePartial('2,0 + 2,')).toBe(4);
+  });
+
+  it('пустая строка остаётся без значения', () => {
+    expect(evaluatePartial('')).toBeNull();
+    expect(evaluatePartial('   ')).toBeNull();
+  });
+
+  it('незаконченное первое число считается нулём копеек, а не пропадает', () => {
+    expect(evaluatePartial('0.')).toBe(0);
+    expect(evaluatePartial('12.')).toBe(12);
   });
 });

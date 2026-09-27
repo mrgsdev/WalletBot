@@ -6,6 +6,8 @@ import { budgetDto } from '../lib/serialize.js';
 import { joinByCode, listBudgets } from '../services/budgets.js';
 import { defaultBudgetId } from '../services/scope.js';
 import { badRequest } from '../lib/errors.js';
+import { isKnownCurrency } from '@budget/shared';
+import { TIME_PATTERN } from '../lib/dates.js';
 
 export const sessionRouter = Router();
 
@@ -50,11 +52,13 @@ sessionRouter.get(
 );
 
 const settingsSchema = z.object({
-  baseCurrency: z.string().length(3).optional(),
+  // Курс есть только для валют из списка приложения.
+  baseCurrency: z.string().length(3).refine(isKnownCurrency, 'Неизвестная валюта').optional(),
   theme: z.enum(['system', 'light', 'dark']).optional(),
   dailyReminder: z.boolean().optional(),
   dailyAlways: z.boolean().optional(),
-  dailyReminderTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  // Раньше подходило и «99:99» — напоминание после этого молча не приходило.
+  dailyReminderTime: z.string().regex(TIME_PATTERN, 'Некорректное время').optional(),
   tzOffsetMinutes: z.number().int().min(-840).max(840).optional(),
 });
 

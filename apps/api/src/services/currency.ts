@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { env } from '../lib/env.js';
 import { CURRENCIES } from '@budget/shared';
+import { badRequest } from '../lib/errors.js';
 
 const CODES = CURRENCIES.map((c) => c.code);
 
@@ -48,22 +49,57 @@ async function fetchFromProvider(): Promise<RateMap | null> {
 }
 
 /**
+ * Дополняет карту запасными значениями.
+ *
+ * Провайдер считается валидным, если отдал хотя бы половину валют, но
+ * недостающие раньше просто отсутствовали в карте. Тогда getRate молча
+ * возвращал единицу, и 100 батов сохранялись в рублёвый счёт как 100 ₽ —
+ * уже навсегда, в convertedAmount и в балансе.
+ */
+function withFallback(rates: RateMap): RateMap {
+  const full: RateMap = { ...FALLBACK_USD_RATES, ...rates };
+  full.USD = 1;
+  return full;
+}
+
+/**
  * Возвращает карту курсов относительно USD, кэшируя её в БД на сутки.
  */
+/** Как долго держим запасные курсы, прежде чем снова постучаться к провайдеру. */
+const FALLBACK_RETRY_MS = 10 * 60_000;
+
+let fallbackUntil = 0;
+
 export async function getUsdRates(): Promise<RateMap> {
   const date = today();
   const cached = memory.get('usd');
-  if (cached?.date === date) return cached.rates;
+  // На запасных курсах кэш живёт до конца окна, потом пробуем провайдера снова.
+  const fallbackFresh = fallbackUntil === 0 || Date.now() < fallbackUntil;
+  if (cached?.date === date && fallbackFresh) return cached.rates;
 
   const rows = await prisma.exchangeRate.findMany({ where: { base: 'USD', date } });
   if (rows.length > 0) {
     const rates: RateMap = { USD: 1 };
     for (const row of rows) rates[row.quote] = row.rate;
-    memory.set('usd', { date, rates });
-    return rates;
+    const full = withFallback(rates);
+    memory.set('usd', { date, rates: full });
+    fallbackUntil = 0;
+    return full;
   }
 
-  const fetched = (await fetchFromProvider()) ?? { ...FALLBACK_USD_RATES };
+  const fetched = await fetchFromProvider();
+
+  if (!fetched) {
+    /*
+     * Провайдер недоступен. Запасные курсы в базу НЕ пишем: раньше они
+     * оседали там на весь день, и сервер больше не пробовал сходить за
+     * настоящими, даже когда провайдер оживал через минуту.
+     */
+    const rates = withFallback({});
+    memory.set('usd', { date, rates });
+    fallbackUntil = Date.now() + FALLBACK_RETRY_MS;
+    return rates;
+  }
 
   await prisma.$transaction(
     Object.entries(fetched).map(([quote, rate]) =>
@@ -75,8 +111,10 @@ export async function getUsdRates(): Promise<RateMap> {
     ),
   );
 
-  memory.set('usd', { date, rates: fetched });
-  return fetched;
+  const full = withFallback(fetched);
+  memory.set('usd', { date, rates: full });
+  fallbackUntil = 0;
+  return full;
 }
 
 /** Курс перевода 1 единицы `from` в `to`. */
@@ -85,7 +123,10 @@ export async function getRate(from: string, to: string): Promise<number> {
   const rates = await getUsdRates();
   const fromRate = rates[from];
   const toRate = rates[to];
-  if (!fromRate || !toRate) return 1;
+  // Курса нет даже в запасных: валюта неизвестна приложению.
+  if (!fromRate || !toRate) {
+    throw badRequest(`Неизвестная валюта: ${!fromRate ? from : to}`);
+  }
   return toRate / fromRate;
 }
 

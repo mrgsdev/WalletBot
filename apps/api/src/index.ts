@@ -45,7 +45,21 @@ app.use(
   }),
 );
 app.use(express.json({ limit: '2mb' }));
-app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '30d' }));
+app.use(
+  '/uploads',
+  express.static(UPLOAD_DIR, {
+    maxAge: '30d',
+    /*
+     * Каталог с пользовательскими файлами лежит на том же домене, что и
+     * приложение. nosniff не даёт браузеру угадать тип по содержимому,
+     * а CSP запрещает файлу выполнять что-либо, даже если он туда попал.
+     */
+    setHeaders: (res) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self'; sandbox");
+    },
+  }),
+);
 
 app.use(requestLogger);
 

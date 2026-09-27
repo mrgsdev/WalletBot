@@ -90,12 +90,17 @@ export async function monthBudgetFor(
   const tz = settings?.tzOffsetMinutes ?? 180;
   const local = localNow(now, tz);
 
-  // Границы месяца в локальном времени пользователя, переведённые обратно в UTC.
-  const from = new Date(
-    Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1) - tz * 60_000,
-  );
+  /*
+   * Какой сейчас месяц — вопрос локальный, поэтому его берём из `local`.
+   * А границы месяца считаем в UTC, как и вся остальная статистика: дата
+   * операции хранится календарным днём (полночь UTC), и дополнительный
+   * сдвиг на часовой пояс разводил карточку бюджета со статистикой —
+   * для поясов западнее Гринвича операция первого числа попадала только
+   * в одну из них.
+   */
+  const from = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1));
   const to = new Date(
-    Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + 1, 1) - tz * 60_000 - 1,
+    Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + 1, 0, 23, 59, 59, 999),
   );
 
   const accountIds = await visibleAccountIds(user, scope);

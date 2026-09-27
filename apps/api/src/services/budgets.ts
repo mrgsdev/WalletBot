@@ -113,7 +113,13 @@ export async function joinByCode(userId: number, rawCode: string) {
   return loadBudget(budget.id);
 }
 
-/** Выход из бюджета. Личные счета участника уходят вместе с ним. */
+/**
+ * Выход из бюджета.
+ *
+ * Счета и операции остаются на месте. Личные счета ушедшего перестают
+ * быть видны кому-либо (общими они не были, а сам он больше не участник),
+ * но и не удаляются: если его пригласят обратно, история вернётся целиком.
+ */
 export async function leaveBudget(userId: number, budgetId: number) {
   const budget = await prisma.budget.findUnique({ where: { id: budgetId } });
   if (!budget) throw notFound('Бюджет не найден');

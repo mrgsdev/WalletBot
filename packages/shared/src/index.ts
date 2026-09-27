@@ -258,6 +258,17 @@ export function currencySymbol(code: string): string {
   return CURRENCY_BY_CODE[code]?.symbol ?? code;
 }
 
+/**
+ * Валюта из списка приложения.
+ *
+ * Курс есть только для этих кодов. Неизвестный код раньше проходил все
+ * проверки (три буквы — и достаточно), а конвертация молча считала его
+ * курсом один к одному, то есть суммы получались неверными.
+ */
+export function isKnownCurrency(code: string): boolean {
+  return Object.hasOwn(CURRENCY_BY_CODE, code.toUpperCase());
+}
+
 /** Палитра для диаграмм — совпадает с цветами категорий из сидов. */
 export const CHART_PALETTE = [
   '#6EC1FF', '#FF9F6E', '#7ED97E', '#B57BFF', '#5B5BD6',

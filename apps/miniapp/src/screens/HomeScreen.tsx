@@ -87,7 +87,7 @@ export function HomeScreen({
             </TourTarget>
           </div>
 
-          {accountsLoading ? (
+          {accountsLoading || total === null ? (
             <Skeleton className="mt-2.5 h-11 w-56" />
           ) : (
             <motion.div

@@ -65,7 +65,7 @@ export function SummaryScreen() {
 
       {/* ---------- Карусель счетов ---------- */}
       <div className="scroll-x flex snap-x snap-mandatory gap-3 px-4 pb-2 pt-1">
-        {accountsLoading ? (
+        {accountsLoading || allBalance === null ? (
           <Skeleton className="h-[132px] w-[280px] shrink-0 rounded-3xl" />
         ) : (
           <>

@@ -6,7 +6,7 @@ import { buildReportPdf } from '../services/pdf.js';
 import { sendDocument } from '../services/telegram-send.js';
 import { escapeHtml, formatNumber } from '@budget/shared';
 import { visibleAccountIds } from '../services/scope.js';
-import { MONTHS_FULL, MONTHS_GENITIVE, parseDate } from '../lib/dates.js';
+import { MONTHS_FULL, MONTHS_GENITIVE, parseDate, parseDayEnd } from '../lib/dates.js';
 import { badRequest } from '../lib/errors.js';
 
 export const exportRouter = Router();
@@ -122,7 +122,7 @@ exportRouter.get(
   ah(async (req, res) => {
     const accountIds = await visibleAccountIds(req.user, req.scope);
     const from = parseDate(req.query.from, new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1)));
-    const to = parseDate(req.query.to, new Date());
+    const to = parseDayEnd(req.query.to, new Date());
 
     const rows = await prisma.transaction.findMany({
       where: { accountId: { in: accountIds }, date: { gte: from, lte: to } },

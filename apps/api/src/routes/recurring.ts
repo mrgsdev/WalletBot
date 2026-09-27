@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { MAX_AMOUNT } from '@budget/shared';
 import { prisma } from '../lib/prisma.js';
 import { ah } from '../lib/asyncHandler.js';
 import { accountWhere, categoryWhere } from '../services/scope.js';
 import { badRequest, notFound } from '../lib/errors.js';
+import { TIME_PATTERN } from '../lib/dates.js';
 
 export const recurringRouter = Router();
 
@@ -26,11 +28,11 @@ const schema = z.object({
   title: z.string().min(1).max(60),
   accountId: z.number().int().positive(),
   categoryId: z.number().int().positive().nullable().optional(),
-  amount: z.number().positive(),
+  amount: z.number().positive().max(MAX_AMOUNT),
   currency: z.string().length(3),
   type: z.enum(['income', 'expense']).optional(),
   dayOfMonth: z.number().int().min(1).max(28),
-  notifyTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  notifyTime: z.string().regex(TIME_PATTERN, 'Некорректное время').optional(),
 });
 
 recurringRouter.post(
@@ -82,12 +84,14 @@ recurringRouter.patch(
     const body = req.body ?? {};
     const data: Record<string, unknown> = {};
     if (typeof body.title === 'string' && body.title.trim()) data.title = body.title.trim();
-    if (Number.isFinite(body.amount) && body.amount > 0) data.amount = body.amount;
+    if (Number.isFinite(body.amount) && body.amount > 0 && body.amount <= MAX_AMOUNT) {
+      data.amount = body.amount;
+    }
     if (Number.isInteger(body.dayOfMonth) && body.dayOfMonth >= 1 && body.dayOfMonth <= 28) {
       data.dayOfMonth = body.dayOfMonth;
     }
     if (typeof body.isActive === 'boolean') data.isActive = body.isActive;
-    if (typeof body.notifyTime === 'string' && /^\d{2}:\d{2}$/.test(body.notifyTime)) {
+    if (typeof body.notifyTime === 'string' && TIME_PATTERN.test(body.notifyTime)) {
       data.notifyTime = body.notifyTime;
     }
     if (typeof body.currency === 'string' && body.currency.length === 3) {

@@ -115,8 +115,8 @@ export async function updateTransaction(
 ) {
   validate(input);
   const allowed = await visibleAccountIds(user, scope);
-  const existing = await prisma.transaction.findUnique({ where: { id } });
-  if (!existing || !allowed.includes(existing.accountId)) throw notFound('Операция не найдена');
+  const before = await prisma.transaction.findUnique({ where: { id } });
+  if (!before || !allowed.includes(before.accountId)) throw notFound('Операция не найдена');
 
   const account = await loadAccount(input.accountId, user, scope);
   const { amount: convertedAmount, rate } = await convert(input.amount, input.currency, account.currency);
@@ -128,6 +128,11 @@ export async function updateTransaction(
   }
 
   return prisma.$transaction(async (tx) => {
+    // Перечитываем внутри транзакции: иначе две одновременные правки
+    // откатили бы один и тот же старый вариант дважды.
+    const existing = await tx.transaction.findUnique({ where: { id } });
+    if (!existing) throw notFound('Операция не найдена');
+
     await applyToBalances(tx, existing, -1);
     const updated = await tx.transaction.update({
       where: { id },
@@ -155,10 +160,15 @@ export async function updateTransaction(
 
 export async function deleteTransaction(user: AuthUser, scope: Scope, id: number) {
   const allowed = await visibleAccountIds(user, scope);
-  const existing = await prisma.transaction.findUnique({ where: { id } });
-  if (!existing || !allowed.includes(existing.accountId)) throw notFound('Операция не найдена');
+  const before = await prisma.transaction.findUnique({ where: { id } });
+  if (!before || !allowed.includes(before.accountId)) throw notFound('Операция не найдена');
 
   await prisma.$transaction(async (tx) => {
+    // Перечитываем внутри транзакции: два одновременных удаления иначе
+    // откатили бы баланс дважды.
+    const existing = await tx.transaction.findUnique({ where: { id } });
+    if (!existing) throw notFound('Операция не найдена');
+
     await applyToBalances(tx, existing, -1);
     await tx.transaction.delete({ where: { id } });
   });

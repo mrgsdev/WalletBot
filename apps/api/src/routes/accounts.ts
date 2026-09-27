@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { isKnownCurrency, MAX_AMOUNT } from '@budget/shared';
 import { prisma } from '../lib/prisma.js';
 import { ah } from '../lib/asyncHandler.js';
 import { accountDto } from '../lib/serialize.js';
@@ -26,26 +27,51 @@ accountsRouter.get(
   }),
 );
 
-const upsertSchema = z.object({
+/** Код валюты из списка приложения: для остальных у нас нет курса. */
+const currencyField = z
+  .string()
+  .length(3)
+  .refine(isKnownCurrency, 'Неизвестная валюта')
+  .transform((code) => code.toUpperCase());
+
+/** Остаток может быть отрицательным (кредитка), но не бесконечным. */
+const balanceField = z.number().min(-MAX_AMOUNT).max(MAX_AMOUNT);
+
+const createSchema = z.object({
   name: z.string().min(1).max(40),
   icon: z.string().max(8).optional(),
   color: z.string().max(16).optional(),
-  currency: z.string().length(3),
-  initialBalance: z.number().optional(),
+  currency: currencyField,
+  initialBalance: balanceField.optional(),
   isShared: z.boolean().optional(),
+});
+
+/* Правка проверяется так же строго, как создание: раньше PATCH пропускал
+ * имя любой длины и иконку в килобайт, потому что шёл мимо схемы. */
+const patchSchema = z.object({
+  name: z.string().min(1).max(40).optional(),
+  icon: z.string().min(1).max(8).optional(),
+  color: z.string().min(4).max(16).optional(),
+  currency: currencyField.optional(),
+  initialBalance: balanceField.optional(),
+  isShared: z.boolean().optional(),
+  isArchived: z.boolean().optional(),
 });
 
 accountsRouter.post(
   '/',
   ah(async (req, res) => {
-    const parsed = upsertSchema.safeParse(req.body);
+    const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) throw badRequest('Проверьте название, валюту и баланс счёта');
     const data = parsed.data;
 
     const isFamily = req.scope.kind === 'family';
     const initial = round2(data.initialBalance ?? 0);
 
-    const count = await prisma.account.count({ where: accountWhere(req.user, req.scope) });
+    const maxOrder = await prisma.account.aggregate({
+      where: accountWhere(req.user, req.scope),
+      _max: { sortOrder: true },
+    });
 
     const account = await prisma.account.create({
       data: {
@@ -54,12 +80,12 @@ accountsRouter.post(
         name: data.name,
         icon: data.icon ?? '💳',
         color: data.color ?? '#6EC1FF',
-        currency: data.currency.toUpperCase(),
+        currency: data.currency,
         initialBalance: initial,
         balance: initial,
         // В личном бюджете участник один, поэтому счёт всегда общий.
         isShared: isFamily ? (data.isShared ?? true) : true,
-        sortOrder: count,
+        sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
       },
       include: { owner: { select: { name: true } } },
     });
@@ -80,17 +106,38 @@ accountsRouter.patch(
       throw forbidden('Редактировать может только владелец счёта');
     }
 
-    const body = req.body ?? {};
-    const data: Record<string, unknown> = {};
-    if (typeof body.name === 'string' && body.name.trim()) data.name = body.name.trim();
-    if (typeof body.icon === 'string') data.icon = body.icon;
-    if (typeof body.color === 'string') data.color = body.color;
-    if (typeof body.currency === 'string' && body.currency.length === 3) {
-      data.currency = body.currency.toUpperCase();
+    const parsed = patchSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      throw badRequest(parsed.error.issues[0]?.message ?? 'Проверьте поля счёта');
     }
-    if (typeof body.isShared === 'boolean' && req.scope.kind === 'family') data.isShared = body.isShared;
-    if (typeof body.isArchived === 'boolean') data.isArchived = body.isArchived;
-    if (Number.isFinite(body.initialBalance)) data.initialBalance = round2(body.initialBalance);
+    const body = parsed.data;
+
+    /*
+     * Валюту счёта с историей менять нельзя.
+     *
+     * Суммы операций хранятся уже пересчитанными в валюту счёта, и при
+     * смене валюты менялась только подпись: 9000 ₽ превращались в 9000 €.
+     * Пересчитать историю честно нельзя — курс был другим в каждый день.
+     */
+    if (body.currency && body.currency !== account.currency) {
+      const used = await prisma.transaction.count({
+        where: { OR: [{ accountId: id }, { toAccountId: id }] },
+      });
+      if (used > 0) {
+        throw badRequest(
+          'У счёта есть операции, поэтому валюту изменить нельзя. Заведите новый счёт в нужной валюте.',
+        );
+      }
+    }
+
+    const data: Record<string, unknown> = {};
+    if (body.name !== undefined) data.name = body.name.trim();
+    if (body.icon !== undefined) data.icon = body.icon;
+    if (body.color !== undefined) data.color = body.color;
+    if (body.currency !== undefined) data.currency = body.currency;
+    if (body.isShared !== undefined && req.scope.kind === 'family') data.isShared = body.isShared;
+    if (body.isArchived !== undefined) data.isArchived = body.isArchived;
+    if (body.initialBalance !== undefined) data.initialBalance = round2(body.initialBalance);
 
     const updated = await prisma.account.update({
       where: { id },

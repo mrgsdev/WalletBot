@@ -57,15 +57,19 @@ export function WalletScreen({ onTransfer }: { onTransfer: () => void }) {
 
       <TourTarget id="wallet-total" className="px-5 pb-4 pt-2">
         <div className="text-[13px] text-muted">Всего на счетах</div>
-        <div
-          className="tabular font-bold leading-tight"
-          /* Кегль под длину: крупный итог иначе уезжает за край. */
-          style={{
-            fontSize: fontSizeForLength(formatMoney(total, baseCurrency, true), 34, 15, 18),
-          }}
-        >
-          {formatMoney(total, baseCurrency, true)}
-        </div>
+        {total === null ? (
+          <Skeleton className="mt-1.5 h-8 w-48" />
+        ) : (
+          <div
+            className="tabular font-bold leading-tight"
+            /* Кегль под длину: крупный итог иначе уезжает за край. */
+            style={{
+              fontSize: fontSizeForLength(formatMoney(total, baseCurrency, true), 34, 15, 18),
+            }}
+          >
+            {formatMoney(total, baseCurrency, true)}
+          </div>
+        )}
       </TourTarget>
 
       <div className="px-4">

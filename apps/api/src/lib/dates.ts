@@ -1,5 +1,8 @@
 export type Period = 'week' | 'month' | 'quarter' | 'year';
 
+/** Время суток «ЧЧ:ММ» с проверкой диапазона, а не только формата. */
+export const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 export interface Range {
   from: Date;
   to: Date;
@@ -133,4 +136,15 @@ export function parseDate(value: unknown, fallback = new Date()): Date {
   if (typeof value !== 'string' || !value) return fallback;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? fallback : d;
+}
+
+/**
+ * Верхняя граница фильтра по дате.
+ *
+ * «2026-09-10» разбирается в полночь UTC, поэтому условие `date <= to`
+ * отсекало весь выбранный день, кроме самой полуночи: фильтр «с 10 по 10
+ * сентября» не возвращал ничего. Дотягиваем до конца суток.
+ */
+export function parseDayEnd(value: unknown, fallback = new Date()): Date {
+  return endOfDay(parseDate(value, fallback));
 }

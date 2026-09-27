@@ -3,6 +3,7 @@
  * Вынесены из stats.ts, чтобы бизнес-логику можно было покрыть тестами без БД.
  */
 import type { CategoryStatItem, GroupStatItem, TrendPoint } from '@budget/shared';
+import { badRequest } from '../lib/errors.js';
 import { GROUP_COLORS } from '../lib/defaultCategories.js';
 import { EXPENSE_GROUP_ORDER } from '../lib/defaultCategories.js';
 
@@ -30,12 +31,22 @@ export type ToBase = (amount: number, fromCurrency: string) => number;
  * Строит конвертер в базовую валюту по карте курсов относительно USD.
  * Неизвестная валюта возвращается как есть — лучше показать сумму, чем ноль.
  */
+/**
+ * Пересчёт в базовую валюту.
+ *
+ * Неизвестный код раньше означал курс один к одному, и статистика молча
+ * складывала баты с рублями. Валюты проверяются на записи, так что сюда
+ * неизвестный код попасть уже не может — а если попал, лучше громкая
+ * ошибка, чем тихо неверные суммы.
+ */
 export function makeConverter(usdRates: Record<string, number>, base: string): ToBase {
-  const baseRate = usdRates[base] ?? 1;
+  const baseRate = usdRates[base];
+  if (!baseRate) throw badRequest(`Нет курса для валюты отчётов: ${base}`);
+
   return (amount, from) => {
     if (from === base) return amount;
     const fromRate = usdRates[from];
-    if (!fromRate) return amount;
+    if (!fromRate) throw badRequest(`Нет курса для валюты: ${from}`);
     return (amount / fromRate) * baseRate;
   };
 }

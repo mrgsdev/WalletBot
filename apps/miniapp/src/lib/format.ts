@@ -46,11 +46,23 @@ export function formatCompact(value: number, currency: string): string {
     { from: 1e4, unit: 1e3, suffix: 'K' },
   ];
 
-  for (const { from, unit, suffix } of steps) {
-    if (abs >= from) {
-      const short = (abs / unit).toFixed(1).replace(/\.0$/, '').replace('.', ',');
-      return `${sign}${symbol}${short}${suffix}`;
+  for (let i = 0; i < steps.length; i++) {
+    if (abs < steps[i].from) continue;
+
+    let { unit, suffix } = steps[i];
+    let short = Math.round((abs / unit) * 10) / 10;
+
+    /*
+     * Округление могло выбить значение в старший разряд: 999 999 при
+     * делении на тысячу давало «1000,0», то есть «₽1000K» вместо «₽1M».
+     * Тогда берём разряд выше — он в списке предыдущий.
+     */
+    if (short >= 1000 && i > 0) {
+      ({ unit, suffix } = steps[i - 1]);
+      short = Math.round((abs / unit) * 10) / 10;
     }
+
+    return `${sign}${symbol}${String(short).replace('.', ',')}${suffix}`;
   }
 
   return `${sign}${symbol}${formatNumber(abs)}`;
@@ -103,47 +115,56 @@ export const MONTHS_SHORT = [
 
 const WEEKDAYS = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
 
-function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
+/**
+ * Дата операции это календарный день, а не момент времени.
+ *
+ * Пока хранили момент, операция, внесённая ночью, попадала в историю под
+ * сегодняшним днём (там дата читалась по местным часам), а в статистику
+ * за вчерашний: периоды на сервере режутся по UTC. На стыке месяцев она
+ * уезжала в прошлый месяц. Поэтому и храним, и показываем день как
+ * полночь UTC, одинаково для любого часового пояса.
+ */
+export function calendarDay(input: string | Date): Date {
+  const date = typeof input === 'string' ? new Date(input) : input;
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
+
+/** Сегодняшний день по часам пользователя, выраженный полуночью UTC. */
+export function todayCalendarDay(now = new Date()): Date {
+  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** «Сегодня» / «Вчера» / «12 августа». */
 export function formatDateLabel(input: string | Date): string {
-  const date = typeof input === 'string' ? new Date(input) : input;
-  const now = new Date();
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
+  const date = calendarDay(input);
+  const today = todayCalendarDay();
 
-  if (isSameDay(date, now)) return 'Сегодня';
-  if (isSameDay(date, yesterday)) return 'Вчера';
+  if (date.getTime() === today.getTime()) return 'Сегодня';
+  if (date.getTime() === today.getTime() - DAY_MS) return 'Вчера';
 
-  const day = date.getDate();
-  const month = MONTHS_GEN[date.getMonth()];
-  const year = date.getFullYear() === now.getFullYear() ? '' : ` ${date.getFullYear()}`;
+  const day = date.getUTCDate();
+  const month = MONTHS_GEN[date.getUTCMonth()];
+  const year = date.getUTCFullYear() === today.getUTCFullYear() ? '' : ` ${date.getUTCFullYear()}`;
   return `${day} ${month}${year}`;
 }
 
 /** Полная дата для заголовков групп в истории. */
 export function formatDateFull(input: string | Date): string {
-  const date = typeof input === 'string' ? new Date(input) : input;
-  const label = formatDateLabel(date);
+  const label = formatDateLabel(input);
   if (label === 'Сегодня' || label === 'Вчера') return label;
-  return `${label}, ${WEEKDAYS[date.getDay()].toLowerCase()}`;
+  return `${label}, ${WEEKDAYS[calendarDay(input).getUTCDay()].toLowerCase()}`;
 }
 
-export function toDateInputValue(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+export function toDateInputValue(input: string | Date): string {
+  const date = calendarDay(input);
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `${date.getUTCFullYear()}-${m}-${d}`;
 }
 
 /** Ключ группировки истории по дню. */
 export function dayKey(input: string | Date): string {
-  const date = typeof input === 'string' ? new Date(input) : input;
-  return toDateInputValue(date);
+  return toDateInputValue(input);
 }

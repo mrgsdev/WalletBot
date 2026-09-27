@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  lastMonths, monthKey, parseDate, previousLabel, previousRange, rangeFor,
+  lastMonths, monthKey, parseDate, parseDayEnd, previousLabel, previousRange, rangeFor,
 } from '../src/lib/dates.js';
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -137,5 +137,24 @@ describe('previousLabel', () => {
   it('остальные периоды подписаны словами', () => {
     expect(previousLabel('week', new Date('2026-09-10T00:00:00Z'))).toBe('к прошлой неделе');
     expect(previousLabel('quarter', new Date('2026-09-10T00:00:00Z'))).toBe('к прошлому кварталу');
+  });
+});
+
+describe('parseDayEnd', () => {
+  it('дотягивает верхнюю границу фильтра до конца суток', () => {
+    const end = parseDayEnd('2026-09-10');
+    expect(end.toISOString()).toBe('2026-09-10T23:59:59.999Z');
+  });
+
+  it('включает операции, сделанные в течение выбранного дня', () => {
+    const end = parseDayEnd('2026-09-10');
+    // Раньше условие date <= to отсекало весь день, кроме самой полуночи.
+    expect(new Date('2026-09-10T19:52:43.415Z') <= end).toBe(true);
+    expect(new Date('2026-09-11T00:00:00.000Z') <= end).toBe(false);
+  });
+
+  it('без значения берёт запасную дату', () => {
+    const fallback = new Date('2026-03-05T10:00:00.000Z');
+    expect(parseDayEnd(undefined, fallback).toISOString()).toBe('2026-03-05T23:59:59.999Z');
   });
 });

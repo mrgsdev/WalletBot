@@ -16,14 +16,26 @@ export const UPLOAD_DIR = env.uploadDir
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
-const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic']);
+/**
+ * Разрешённые типы и расширение для каждого из них.
+ *
+ * Расширение берётся отсюда, а не из имени файла: имя задаёт клиент, и
+ * «чек.html», отправленный с заголовком image/png, сохранялся как .html
+ * и отдавался с Content-Type: text/html — то есть чужая страница на
+ * домене приложения.
+ */
+const ALLOWED = new Map([
+  ['image/jpeg', '.jpg'],
+  ['image/png', '.png'],
+  ['image/webp', '.webp'],
+  ['image/heic', '.heic'],
+]);
 
 const upload = multer({
   storage: multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
     filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-      cb(null, `${crypto.randomUUID()}${ext}`);
+      cb(null, `${crypto.randomUUID()}${ALLOWED.get(file.mimetype) ?? '.bin'}`);
     },
   }),
   limits: { fileSize: 8 * 1024 * 1024 },

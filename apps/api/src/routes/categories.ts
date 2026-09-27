@@ -34,6 +34,17 @@ const createSchema = z.object({
   group: z.string().max(40).optional().nullable(),
 });
 
+/* Правка проверяется так же строго, как создание: раньше PATCH шёл мимо
+ * схемы и принимал имя любой длины. */
+const patchSchema = z.object({
+  name: z.string().min(1).max(40).optional(),
+  type: z.never().optional(),
+  icon: z.string().min(1).max(8).optional(),
+  color: z.string().min(4).max(16).optional(),
+  group: z.string().max(40).optional(),
+  isArchived: z.boolean().optional(),
+});
+
 categoriesRouter.post(
   '/',
   ah(async (req, res) => {
@@ -70,13 +81,18 @@ categoriesRouter.patch(
     });
     if (!category) throw notFound('Категория не найдена');
 
-    const body = req.body ?? {};
+    const parsed = patchSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      throw badRequest(parsed.error.issues[0]?.message ?? 'Проверьте поля категории');
+    }
+    const body = parsed.data;
+
     const data: Record<string, unknown> = {};
-    if (typeof body.name === 'string' && body.name.trim()) data.name = body.name.trim();
-    if (typeof body.icon === 'string' && body.icon) data.icon = body.icon;
-    if (typeof body.color === 'string' && body.color) data.color = body.color;
-    if (typeof body.group === 'string') data.group = body.group;
-    if (typeof body.isArchived === 'boolean') data.isArchived = body.isArchived;
+    if (body.name !== undefined) data.name = body.name.trim();
+    if (body.icon !== undefined) data.icon = body.icon;
+    if (body.color !== undefined) data.color = body.color;
+    if (body.group !== undefined) data.group = body.group;
+    if (body.isArchived !== undefined) data.isArchived = body.isArchived;
 
     const updated = await prisma.category.update({ where: { id }, data });
     res.json(categoryDto(updated));

@@ -14,14 +14,14 @@ import type { CategoryDto, TransactionDto } from '@budget/shared';
 import {
   CURRENCY_BY_CODE,
   currencySymbol,
-  evaluateExpression,
+  evaluatePartial,
   formatExpression,
   hasOperator,
   MAX_AMOUNT,
   pushToken,
 } from '@budget/shared';
 import { useAccounts, useCategories, useDeleteTransaction, useRates, useSaveTransaction } from '../lib/queries';
-import { fontSizeForLength, formatMoney, formatMoneyFit, formatNumber, formatDateLabel, toDateInputValue } from '../lib/format';
+import { calendarDay, fontSizeForLength, formatMoney, formatMoneyFit, formatNumber, formatDateLabel, todayCalendarDay, toDateInputValue } from '../lib/format';
 import { tg } from '../lib/telegram';
 import { emitTourEvent } from '../lib/tourBus';
 import { AccountIcon } from '../components/AccountIcon';
@@ -63,7 +63,7 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
   const [toAccountId, setToAccountId] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [currency, setCurrency] = useState('RUB');
-  const [date, setDate] = useState(() => new Date());
+  const [date, setDate] = useState(() => todayCalendarDay());
   const [comment, setComment] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +78,12 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
   const category = categories.find((c) => c.id === categoryId) ?? null;
 
   const { data: rates } = useRates(currency);
-  const amount = evaluateExpression(expression) ?? 0;
+  /*
+   * Считаем по законченной части выражения: «2,0 + 2,» — это ещё не
+   * законченная формула, но 4 в ней уже набраны, и показывать вместо них
+   * ноль неправильно.
+   */
+  const amount = evaluatePartial(expression) ?? 0;
 
   // Инициализация при открытии: либо редактируем операцию, либо начинаем с чистого листа.
   useEffect(() => {
@@ -92,7 +97,7 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
       setToAccountId(editing.toAccountId);
       setCategoryId(editing.categoryId);
       setCurrency(editing.currency);
-      setDate(new Date(editing.date));
+      setDate(calendarDay(editing.date));
       setComment(editing.comment ?? '');
       setIsRecurring(editing.isRecurring);
       return;
@@ -188,7 +193,7 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
         categoryId: type === 'transfer' ? null : categoryId,
         amount,
         currency,
-        date: date.toISOString(),
+        date: calendarDay(date).toISOString(),
         comment: comment.trim() || null,
       });
       tg.haptic.success();
@@ -441,12 +446,13 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
                   <input
                     type="date"
                     value={toDateInputValue(date)}
-                    max={toDateInputValue(new Date())}
+                    max={toDateInputValue(todayCalendarDay())}
                     onChange={(e) => {
                       const next = e.target.valueAsDate ?? new Date(e.target.value);
                       if (!Number.isNaN(next.getTime())) {
                         tg.haptic.select();
-                        setDate(next);
+                        // valueAsDate уже полночь UTC, но страхуемся от запасной ветки.
+                        setDate(calendarDay(next));
                       }
                   }}
                     className="absolute inset-0 opacity-0"
