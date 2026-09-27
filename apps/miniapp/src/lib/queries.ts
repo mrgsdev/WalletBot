@@ -467,17 +467,22 @@ export function useDemo() {
   const client = useQueryClient();
   const invalidate = useInvalidateBudget();
 
+  /* Обе операции меняют и данные бюджета, и сам признак «демо есть». */
+  const refresh = () => {
+    invalidate();
+    client.invalidateQueries({ queryKey: ['demo'] });
+  };
+
   return {
     seed: useMutation({
       mutationFn: () => apiFetch<DemoStatus>('/demo/seed', { method: 'POST' }),
-      onSuccess: invalidate,
+      // Раньше наполнение не сбрасывало ['demo'], и статус оставался
+      // прежним: экран продолжал считать, что демо-данных нет.
+      onSuccess: refresh,
     }),
     clear: useMutation({
       mutationFn: () => apiFetch<{ removed: number }>('/demo', { method: 'DELETE' }),
-      onSuccess: () => {
-        invalidate();
-        client.invalidateQueries({ queryKey: ['demo'] });
-      },
+      onSuccess: refresh,
     }),
   };
 }

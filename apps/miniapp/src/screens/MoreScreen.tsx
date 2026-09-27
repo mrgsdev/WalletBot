@@ -8,6 +8,8 @@ import { CURRENCIES, type ThemeMode } from '@budget/shared';
 import accountsIcon from '../assets/accounts.png';
 import exportIcon from '../assets/export.png';
 import tourIcon from '../assets/tour.png';
+import demoIcon from '../assets/bars.png';
+import cleanIcon from '../assets/categories/household.png';
 import categoriesIcon from '../assets/categories.png';
 import planIcon from '../assets/plan.png';
 import themeIcon3d from '../assets/theme.png';
@@ -20,7 +22,14 @@ import { PeriodRow, PeriodSheet } from '../components/PeriodSheet';
 import { TOUR, TourTarget, useTour } from '../components/Tour';
 import { Skeleton } from '../components/ui';
 import { BudgetSwitcher } from '../components/BudgetSwitcher';
-import { type ExportFormat, useSendExport, useSession, useUpdateSettings } from '../lib/queries';
+import {
+  type ExportFormat,
+  useDemo,
+  useDemoStatus,
+  useSendExport,
+  useSession,
+  useUpdateSettings,
+} from '../lib/queries';
 import { useAppStore } from '../store/app';
 import { MONTHS_NOM } from '../lib/format';
 import { tg } from '../lib/telegram';
@@ -118,6 +127,7 @@ export function MoreScreen() {
                 onClick={() => setSheet('export')}
               />
             </TourTarget>
+            <DemoRows />
             <TourTarget id="more-replay">
               <ReplayTourRow />
             </TourTarget>
@@ -334,6 +344,111 @@ function ExportSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
       />
     </>
   );
+}
+
+/**
+ * Демо-данные: вернуть для примера или убрать.
+ *
+ * Собственные записи ни та, ни другая кнопка не трогают — под удаление
+ * попадают только операции, помеченные как демонстрационные.
+ */
+function DemoRows() {
+  const { data: status } = useDemoStatus();
+  const demo = useDemo();
+  const [confirmClear, setConfirmClear] = useState(false);
+
+  const hasDemo = status?.hasDemo ?? false;
+  const count = status?.count ?? 0;
+  const busy = demo.seed.isPending || demo.clear.isPending;
+
+  return (
+    <>
+      <Row
+        iconBare
+        icon={<MenuIcon src={demoIcon} />}
+        label="Вернуть демо-данные"
+        hint={
+          demo.seed.isPending
+            ? 'Добавляю…'
+            : hasDemo
+              ? 'Уже добавлены'
+              : 'Операции за три месяца, чтобы посмотреть графики'
+        }
+        onClick={() => {
+          if (busy || hasDemo) return;
+          tg.haptic.light();
+          demo.seed.mutate();
+        }}
+      />
+      <Row
+        iconBare
+        icon={<MenuIcon src={cleanIcon} />}
+        label="Очистить демо-данные"
+        hint={
+          demo.clear.isPending
+            ? 'Удаляю…'
+            : hasDemo
+              ? `${count} ${pluralOperations(count)}, ваши записи останутся`
+              : 'Демо-данных нет'
+        }
+        onClick={() => {
+          if (busy || !hasDemo) return;
+          tg.haptic.light();
+          setConfirmClear(true);
+        }}
+      />
+
+      <Sheet
+        open={confirmClear}
+        onClose={() => setConfirmClear(false)}
+        title="Очистить демо-данные?"
+      >
+        <div className="space-y-3 pt-1">
+          <p className="text-center text-[14px] leading-snug text-muted">
+            Удалю {count} {pluralOperations(count)}, добавленные для примера. Всё, что вы
+            записали сами, останется на месте.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              tg.haptic.light();
+              /*
+               * Лист закрываем сразу, не дожидаясь ответа: мутация
+               * считается завершённой только после обновления всех
+               * связанных запросов, и «Удаляю…» висело бы несколько
+               * секунд уже после того, как данные исчезли. Прогресс
+               * видно в подсказке самой строки.
+               */
+              setConfirmClear(false);
+              demo.clear.mutate(undefined, {
+                onSuccess: () => tg.haptic.success(),
+                onError: () => tg.haptic.error(),
+              });
+            }}
+            className="pressable w-full rounded-2xl bg-negative/15 px-4 py-3.5 text-[16px] font-semibold text-negative"
+          >
+            Очистить
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirmClear(false)}
+            className="pressable w-full rounded-2xl bg-elevated px-4 py-3.5 text-[16px] font-medium"
+          >
+            Отмена
+          </button>
+        </div>
+      </Sheet>
+    </>
+  );
+}
+
+function pluralOperations(count: number): string {
+  const mod100 = count % 100;
+  const mod10 = count % 10;
+  if (mod100 >= 11 && mod100 <= 14) return 'операций';
+  if (mod10 === 1) return 'операция';
+  if (mod10 >= 2 && mod10 <= 4) return 'операции';
+  return 'операций';
 }
 
 /** Запускает пошаговое обучение заново с первого шага. */
