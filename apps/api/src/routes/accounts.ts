@@ -27,14 +27,12 @@ accountsRouter.get(
   }),
 );
 
-/** Код валюты из списка приложения: для остальных у нас нет курса. */
 const currencyField = z
   .string()
   .length(3)
   .refine(isKnownCurrency, 'Неизвестная валюта')
   .transform((code) => code.toUpperCase());
 
-/** Остаток может быть отрицательным (кредитка), но не бесконечным. */
 const balanceField = z.number().min(-MAX_AMOUNT).max(MAX_AMOUNT);
 
 const createSchema = z.object({
@@ -46,8 +44,6 @@ const createSchema = z.object({
   isShared: z.boolean().optional(),
 });
 
-/* Правка проверяется так же строго, как создание: раньше PATCH пропускал
- * имя любой длины и иконку в килобайт, потому что шёл мимо схемы. */
 const patchSchema = z.object({
   name: z.string().min(1).max(40).optional(),
   icon: z.string().min(1).max(8).optional(),
@@ -83,7 +79,7 @@ accountsRouter.post(
         currency: data.currency,
         initialBalance: initial,
         balance: initial,
-        // В личном бюджете участник один, поэтому счёт всегда общий.
+
         isShared: isFamily ? (data.isShared ?? true) : true,
         sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
       },
@@ -112,13 +108,6 @@ accountsRouter.patch(
     }
     const body = parsed.data;
 
-    /*
-     * Валюту счёта с историей менять нельзя.
-     *
-     * Суммы операций хранятся уже пересчитанными в валюту счёта, и при
-     * смене валюты менялась только подпись: 9000 ₽ превращались в 9000 €.
-     * Пересчитать историю честно нельзя — курс был другим в каждый день.
-     */
     if (body.currency && body.currency !== account.currency) {
       const used = await prisma.transaction.count({
         where: { OR: [{ accountId: id }, { toAccountId: id }] },
@@ -145,7 +134,6 @@ accountsRouter.patch(
       include: { owner: { select: { name: true } } },
     });
 
-    // Смена валюты или стартового остатка требует пересчёта баланса.
     if (data.currency !== undefined || data.initialBalance !== undefined) {
       await recalcAccountBalance(id);
     }
@@ -172,7 +160,6 @@ accountsRouter.delete(
       where: { OR: [{ accountId: id }, { toAccountId: id }] },
     });
 
-    // Счёт с историей не удаляем, а архивируем — иначе потеряем операции.
     if (txCount > 0) {
       await prisma.account.update({ where: { id }, data: { isArchived: true } });
       return res.json({ ok: true, archived: true });
@@ -183,7 +170,6 @@ accountsRouter.delete(
   }),
 );
 
-/** Ручной пересчёт баланса по истории операций. */
 accountsRouter.post(
   '/:id/recalc',
   ah(async (req, res) => {

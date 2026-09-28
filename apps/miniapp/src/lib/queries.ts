@@ -21,13 +21,6 @@ import type {
 import { apiFetch } from './api';
 import { useAppStore } from '../store/app';
 
-/**
- * Ключ текущего бюджета для запросов.
- *
- * Возвращает 0, пока бюджет не подтверждён сессией: сохранённый id может
- * указывать на удалённый бюджет, и запросы с ним отвечали бы 404,
- * пока приложение не переключится на существующий.
- */
 function useBudgetKey() {
   const budgetId = useAppStore((s) => s.budgetId);
   const { data: session } = useQuery<SessionDto>({
@@ -77,11 +70,6 @@ export function useCategories(type?: 'income' | 'expense') {
   });
 }
 
-/**
- * Валюта отчётов. Входит в ключи запросов, которые сервер считает в ней:
- * без этого после смены валюты react-query отдавал бы кэш со старыми суммами,
- * пока данные не устареют сами.
- */
 function useBaseCurrency(): string {
   const { data: session } = useQuery<SessionDto>({
     queryKey: ['session'],
@@ -91,7 +79,6 @@ function useBaseCurrency(): string {
   return session?.settings.baseCurrency ?? 'RUB';
 }
 
-/** Бюджет на месяц: остаток и дневная норма. */
 export function useMonthBudget() {
   const budgetId = useBudgetKey();
   const currency = useBaseCurrency();
@@ -201,7 +188,6 @@ export function usePlans(year: number, month: number) {
   });
 }
 
-/** Сбрасывает всё, что зависит от операций. */
 export function useInvalidateBudget() {
   const client = useQueryClient();
   return () => {
@@ -283,11 +269,6 @@ export function useSaveCategory() {
   });
 }
 
-/**
- * Удаление категории. Сервер удаляет её только если на неё не ссылается
- * ни одна операция — иначе возвращает archived:true и оставляет в архиве,
- * чтобы история не осталась без категории.
- */
 export function useDeleteCategory() {
   const client = useQueryClient();
   return useMutation({
@@ -309,7 +290,6 @@ export function useSavePlan() {
   });
 }
 
-/** Мутации бюджетов: создание, удаление, приглашения, участники. */
 export function useBudgetMutations() {
   const client = useQueryClient();
   const refresh = () => {
@@ -370,8 +350,7 @@ export function useUpdateSettings() {
       apiFetch<UserSettingsDto>('/session/settings', { method: 'PATCH', body: patch, skipScope: true }),
     onSuccess: (_data, patch) => {
       client.invalidateQueries({ queryKey: ['session'] });
-      // Валюта отчётов и часовой пояс меняют то, что считает сервер,
-      // поэтому пересчитанные им данные нужно перезапросить, а не брать из кэша.
+
       if (patch.baseCurrency !== undefined || patch.tzOffsetMinutes !== undefined) {
         client.invalidateQueries({ queryKey: ['stats'] });
         client.invalidateQueries({ queryKey: ['month-budget'] });
@@ -382,7 +361,6 @@ export function useUpdateSettings() {
   });
 }
 
-/** Отметка просмотренной подсказки. */
 export function useMarkTipSeen() {
   const client = useQueryClient();
   return useMutation({
@@ -425,7 +403,6 @@ export interface RecurringInput {
   notifyTime: string;
 }
 
-/** Напоминания о регулярных платежах. */
 export function useRecurring() {
   const budgetId = useBudgetKey();
   return useQuery({
@@ -462,12 +439,10 @@ export interface DemoStatus {
   count: number;
 }
 
-/** Демо-данные для обучения: наполнение и удаление. */
 export function useDemo() {
   const client = useQueryClient();
   const invalidate = useInvalidateBudget();
 
-  /* Обе операции меняют и данные бюджета, и сам признак «демо есть». */
   const refresh = () => {
     invalidate();
     client.invalidateQueries({ queryKey: ['demo'] });
@@ -476,8 +451,7 @@ export function useDemo() {
   return {
     seed: useMutation({
       mutationFn: () => apiFetch<DemoStatus>('/demo/seed', { method: 'POST' }),
-      // Раньше наполнение не сбрасывало ['demo'], и статус оставался
-      // прежним: экран продолжал считать, что демо-данных нет.
+
       onSuccess: refresh,
     }),
     clear: useMutation({
@@ -496,7 +470,6 @@ export function useDemoStatus() {
   });
 }
 
-/** Отправляет выгрузку файлом в чат с ботом. */
 export type ExportFormat = 'xlsx' | 'pdf';
 
 export function useSendExport() {

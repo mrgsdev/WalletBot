@@ -9,11 +9,6 @@ import { fontSizeForLength, formatMoney, MONTHS_NOM } from '../lib/format';
 import { useBudgetMutations } from '../lib/queries';
 import { tg } from '../lib/telegram';
 
-/**
- * Бюджет на месяц. В свёрнутом виде — остаток и дневная норма,
- * по тапу открывается разбор: сколько можно тратить, сколько уже ушло
- * и куда всё идёт при текущем темпе.
- */
 export function MonthBudgetCard({
   data,
   budget,
@@ -23,7 +18,7 @@ export function MonthBudgetCard({
   data?: MonthBudgetDto;
   budget?: BudgetDto;
   isLoading: boolean;
-  /** 'tile' — компактная плитка в ряду счетов на главной. */
+
   variant?: 'card' | 'tile';
 }) {
   const [open, setOpen] = useState(false);
@@ -37,7 +32,6 @@ export function MonthBudgetCard({
     );
   }
 
-  // Плитка: та же логика и тот же разбор по тапу, но в габаритах счёта.
   if (isTile) {
     const tileShare = data.limit === null ? 0 : Math.min(data.usedShare, 100);
     const tileColor = data.isOverspent ? '#FF6E6E' : tileShare > 80 ? '#FFC94D' : '#7ED97E';
@@ -90,7 +84,6 @@ export function MonthBudgetCard({
     );
   }
 
-  // Лимит не задан — предлагаем задать.
   if (data.limit === null) {
     return (
       <>
@@ -244,7 +237,6 @@ function LimitSheet({
         </div>
       ) : (
         <div className="pt-1">
-          {/* Главная цифра — сколько можно потратить сегодня и в каждый следующий день. */}
           <div className="rounded-3xl bg-elevated/50 p-4 text-center">
             <div className="text-[13px] text-muted">Можно тратить в день</div>
             <div className="tabular mt-1 text-[36px] font-bold leading-tight">

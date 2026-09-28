@@ -19,11 +19,6 @@ const TYPE_NAMES: Record<string, string> = {
   transfer: 'Перевод',
 };
 
-/**
- * Собирает книгу Excel за диапазон месяцев.
- * Лист «План-Факт» — категории по строкам, месяцы по колонкам.
- * Лист «Операции» — плоский список транзакций.
- */
 export async function buildWorkbook(user: AuthUser, scope: Scope, range: ExportRange) {
   const { year, fromMonth, toMonth } = range;
 
@@ -72,7 +67,6 @@ export async function buildWorkbook(user: AuthUser, scope: Scope, range: ExportR
   workbook.creator = 'Бюджет';
   workbook.created = new Date();
 
-  // ---------- Лист «План-Факт» ----------
   const sheet = workbook.addWorksheet('План-Факт', {
     views: [{ state: 'frozen', xSplit: 2, ySplit: 2 }],
   });
@@ -139,7 +133,6 @@ export async function buildWorkbook(user: AuthUser, scope: Scope, range: ExportR
     sheet.getColumn(i).numFmt = '#,##0.00';
   }
 
-  // ---------- Лист «Операции» ----------
   const txSheet = workbook.addWorksheet('Операции');
   txSheet.addRow([
     'Дата', 'Тип', 'Счёт', 'Счёт-получатель', 'Группа', 'Категория',

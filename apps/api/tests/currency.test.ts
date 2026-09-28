@@ -3,11 +3,6 @@ import { prisma } from '../src/lib/prisma.js';
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
-/*
- * Модуль курсов держит карту в памяти между вызовами, поэтому каждый тест
- * берёт свежий экземпляр: иначе второй тест читал бы кэш первого и молча
- * проходил, ничего не проверив.
- */
 async function freshCurrency() {
   vi.resetModules();
   return import('../src/services/currency.js');
@@ -27,7 +22,6 @@ afterEach(() => {
 
 describe('getUsdRates', () => {
   it('дополняет неполный ответ провайдера запасными курсами', async () => {
-    // Провайдер отдаёт половину валют: раньше остальные просто исчезали из карты.
     vi.stubGlobal('fetch', providerReturning({ EUR: 0.9, RUB: 95, GEL: 2.7, KZT: 480, TRY: 35, GBP: 0.8 }));
     const { getUsdRates } = await freshCurrency();
 
@@ -35,7 +29,7 @@ describe('getUsdRates', () => {
 
     expect(rates.RUB).toBe(95);
     expect(rates.USD).toBe(1);
-    // Батов и драмов в ответе не было — курс берётся запасной, а не пропадает.
+
     expect(rates.THB).toBeGreaterThan(1);
     expect(rates.AMD).toBeGreaterThan(1);
   });
@@ -51,7 +45,7 @@ describe('getUsdRates', () => {
 
     expect(fetchMock).toHaveBeenCalled();
     expect(rates.RUB).toBeGreaterThan(1);
-    // Иначе сервер весь день считал бы по выдуманному курсу и не пробовал снова.
+
     expect(await prisma.exchangeRate.count({ where: { base: 'USD', date: TODAY } })).toBe(0);
   });
 
@@ -78,7 +72,6 @@ describe('getRate', () => {
     vi.stubGlobal('fetch', providerReturning({ EUR: 0.9, RUB: 90, GEL: 2.7, KZT: 480, TRY: 35, GBP: 0.8 }));
     const { getRate } = await freshCurrency();
 
-    // 1 EUR = 100 RUB при 0,9 EUR и 90 RUB за доллар.
     expect(await getRate('EUR', 'RUB')).toBeCloseTo(100, 6);
   });
 

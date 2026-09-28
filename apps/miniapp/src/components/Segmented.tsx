@@ -14,7 +14,6 @@ interface Props<T extends string> {
   size?: 'sm' | 'md';
 }
 
-/** Сегментированный контрол в стиле iOS с «переезжающей» подложкой. */
 export function Segmented<T extends string>({ options, value, onChange, size = 'md' }: Props<T>) {
   const layoutId = useId();
   const pad = size === 'sm' ? 'px-3 py-1.5 text-[13px]' : 'px-4 py-2 text-[14px]';

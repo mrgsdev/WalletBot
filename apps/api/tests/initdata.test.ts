@@ -4,7 +4,6 @@ import { verifyInitData } from '../src/lib/telegram.js';
 
 const TOKEN = '123456:TEST-TOKEN-FOR-UNIT-TESTS';
 
-/** Собирает initData с корректной подписью — так его формирует Telegram. */
 function sign(fields: Record<string, string>, opts: { excludeSignature?: boolean } = {}) {
   const dcs = Object.keys(fields)
     .filter((k) => k !== 'hash' && !(opts.excludeSignature && k === 'signature'))

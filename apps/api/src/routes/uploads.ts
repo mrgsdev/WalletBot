@@ -9,21 +9,12 @@ import { badRequest } from '../lib/errors.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
-// В проде каталог задаётся через UPLOAD_DIR и лежит вне кода приложения.
 export const UPLOAD_DIR = env.uploadDir
   ? path.resolve(env.uploadDir)
   : path.resolve(here, '../../uploads');
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
-/**
- * Разрешённые типы и расширение для каждого из них.
- *
- * Расширение берётся отсюда, а не из имени файла: имя задаёт клиент, и
- * «чек.html», отправленный с заголовком image/png, сохранялся как .html
- * и отдавался с Content-Type: text/html — то есть чужая страница на
- * домене приложения.
- */
 const ALLOWED = new Map([
   ['image/jpeg', '.jpg'],
   ['image/png', '.png'],
@@ -47,7 +38,6 @@ const upload = multer({
 
 export const uploadsRouter = Router();
 
-/** Загрузка фото чека. Возвращает публичный URL для сохранения в транзакции. */
 uploadsRouter.post('/receipt', upload.single('file'), (req, res) => {
   if (!req.file) throw badRequest('Файл не получен');
   res.status(201).json({ url: `${env.publicUrl}/uploads/${req.file.filename}` });

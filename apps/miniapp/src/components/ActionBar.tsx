@@ -2,12 +2,6 @@ import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight } from 'lucide-react';
 import type { TransactionType } from '@budget/shared';
 import { tg } from '../lib/telegram';
 
-/**
- * Тёмная полоса быстрых действий между шапкой и листом операций.
- *
- * Три способа завести операцию. Полоса тёмная в обеих темах — она же
- * зрительно разделяет два белых полотна.
- */
 export function ActionBar({ onAdd }: { onAdd: (type: TransactionType) => void }) {
   return (
     <div className="flex items-center justify-center gap-2 px-3.5 py-3">

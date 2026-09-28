@@ -16,31 +16,17 @@ import { useDemo, useMarkTipSeen, useResetTips, useSession } from '../lib/querie
 import { tg } from '../lib/telegram';
 import { onTourEvent, type TourEvent } from '../lib/tourBus';
 
-/**
- * Пошаговое обучение в духе TipKit.
- *
- * Тур ведёт пользователя по всему приложению: сам переходит на нужный экран,
- * подсвечивает элемент и объясняет, зачем он. Проходится один раз —
- * отметка хранится на сервере, — но его можно запустить заново из настроек.
- */
-
-/** Идентификатор пройденного тура. Смените суффикс, если шаги сильно изменились. */
 export const TOUR_ID = 'tour-v1';
 
 export interface TourStep {
   id: string;
-  /** Экран, на котором живёт элемент. Тур перейдёт туда сам. */
+
   route: string;
   title: string;
   text: string;
 }
 
-/**
- * Сценарий обучения: от главного экрана к статистике, счетам и настройкам.
- * Порядок здесь — это порядок показа.
- */
 export const TOUR: TourStep[] = [
-  // ---------- Главная ----------
   {
     id: 'budget-switch',
     route: '/',
@@ -84,7 +70,6 @@ export const TOUR: TourStep[] = [
     text: 'Главная кнопка приложения. Открывает калькулятор: можно вводить выражения вроде 75+50, выбирать счёт, валюту, дату и категорию.',
   },
 
-  // ---------- Статистика ----------
   {
     id: 'stats-type',
     route: '/stats',
@@ -110,7 +95,6 @@ export const TOUR: TourStep[] = [
     text: 'Те же данные цифрами, от большего к меньшему. Кнопка «История» ниже покажет операции за этот период.',
   },
 
-  // ---------- Кошелёк ----------
   {
     id: 'wallet-total',
     route: '/wallet',
@@ -130,7 +114,6 @@ export const TOUR: TourStep[] = [
     text: 'Добавьте карту, наличные или счёт в другой валюте. Стартовый остаток можно указать сразу.',
   },
 
-  // ---------- Настройки ----------
   {
     id: 'more-budgets',
     route: '/more',
@@ -163,26 +146,17 @@ export const TOUR: TourStep[] = [
   },
 ];
 
-/** Шаг интерактивного сценария: пользователь действует сам. */
 export interface ActStep {
   id: string;
   route: string;
   title: string;
   text: string;
-  /**
-   * Событие, которого ждём от приложения. Пока его нет, кнопки «Далее»
-   * не будет — шаг завершает сам пользователь.
-   */
+
   awaits?: TourEvent;
-  /** Подсказка под карточкой, пока действие не выполнено. */
+
   hint?: string;
 }
 
-/**
- * Интерактивный сценарий: записать первую операцию от начала до конца.
- * В отличие от обзора, здесь оверлей пропускает нажатия к подсвеченному
- * элементу — пользователь делает всё своими руками.
- */
 export const WALKTHROUGH: ActStep[] = [
   {
     id: 'add-button',
@@ -237,22 +211,15 @@ interface TourActions {
 
 const TourContext = createContext<TourActions | null>(null);
 
-/** Сколько ждём появления элемента, прежде чем пропустить шаг. */
 const TARGET_TIMEOUT_MS = 2500;
 
-/**
- * Этапы обучения.
- *
- * Порядок такой: демо-данные → обзор приложения → вопрос про демо →
- * предложение пройти сценарий руками → интерактив.
- */
 type Phase =
   | { kind: 'idle' }
   | { kind: 'overview'; index: number }
   | { kind: 'ask-demo' }
   | { kind: 'ask-walkthrough' }
   | { kind: 'walkthrough'; index: number }
-  /** Подтверждение выхода. Помним, куда вернуться, если человек передумал. */
+
   | { kind: 'confirm-skip'; from: Phase }
 
 export function TourProvider({ children }: { children: ReactNode }) {
@@ -267,7 +234,6 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [targets, setTargets] = useState<Map<string, HTMLElement>>(new Map());
   const [demoCreated, setDemoCreated] = useState(0);
 
-  // Мутации пересоздаются каждый рендер, а колбэки должны быть стабильными.
   const refs = useRef({ markSeen, resetTips, demo });
   refs.current = { markSeen, resetTips, demo };
 
@@ -275,8 +241,6 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback((id: string, element: HTMLElement) => {
     setTargets((prev) => {
-      // Без этой проверки каждая регистрация давала бы новое состояние
-      // и бесконечный цикл рендеров.
       if (prev.get(id) === element) return prev;
       const next = new Map(prev);
       next.set(id, element);
@@ -293,13 +257,11 @@ export function TourProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  /** Завершение всего обучения. */
   const finish = useCallback(() => {
     setPhase({ kind: 'idle' });
     refs.current.markSeen.mutate(TOUR_ID);
   }, []);
 
-  /** Запуск с нуля: наполняем демо и открываем обзор. */
   const start = useCallback(() => {
     refs.current.resetTips.mutate();
     refs.current.demo.seed.mutate(undefined, {
@@ -308,7 +270,6 @@ export function TourProvider({ children }: { children: ReactNode }) {
     setPhase({ kind: 'overview', index: 0 });
   }, []);
 
-  // Автозапуск для новичка. Ref не даёт стартовать дважды.
   const autoStarted = useRef(false);
   useEffect(() => {
     if (!session || completed || autoStarted.current) return;
@@ -317,13 +278,11 @@ export function TourProvider({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timer);
   }, [session, completed, start]);
 
-  // Во время подтверждения продолжаем показывать тот шаг, на котором остановились.
   const visible = phase.kind === 'confirm-skip' ? phase.from : phase;
   const overviewStep = visible.kind === 'overview' ? TOUR[visible.index] : null;
   const walkStep = visible.kind === 'walkthrough' ? WALKTHROUGH[visible.index] : null;
   const step = overviewStep ?? walkStep;
 
-  // Переводим пользователя на экран текущего шага.
   useEffect(() => {
     if (!step) return;
     if (location.pathname !== step.route) navigate(step.route);
@@ -340,7 +299,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
         if (prev.index + 1 < WALKTHROUGH.length) {
           return { kind: 'walkthrough', index: prev.index + 1 };
         }
-        // Сценарий пройден до конца — обучение закончено.
+
         refs.current.markSeen.mutate(TOUR_ID);
         return { kind: 'idle' };
       }
@@ -361,7 +320,6 @@ export function TourProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  /** Крестик и «Пропустить» сначала спрашивают подтверждение. */
   const requestSkip = useCallback(() => {
     tg.haptic.warning();
     setPhase((prev) =>
@@ -369,13 +327,12 @@ export function TourProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  // Интерактивный шаг ждёт реального действия пользователя.
   useEffect(() => {
     if (!walkStep?.awaits) return;
     return onTourEvent((event) => {
       if (event !== walkStep.awaits) return;
       tg.haptic.success();
-      // Небольшая пауза: пользователь должен увидеть результат своего действия.
+
       window.setTimeout(() => {
         setPhase((prev) => {
           if (prev.kind !== 'walkthrough' || WALKTHROUGH[prev.index]?.id !== walkStep.id) {
@@ -397,7 +354,6 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const element = step ? targets.get(step.id) : undefined;
   const interactive = visible.kind === 'walkthrough';
 
-
   return (
     <TourContext.Provider value={actions}>
       {children}
@@ -405,7 +361,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
       {step && (
         <TourOverlay
           key={step.id}
-          // Во время подтверждения карточка шага не должна принимать нажатия.
+
           muted={phase.kind === 'confirm-skip'}
           title={step.title}
           text={step.text}
@@ -438,7 +394,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
           }}
           onSecondary={() => {
             tg.haptic.light();
-            // Из обзора идём к вопросам про демо, из интерактива — сразу к выходу.
+
             if (phase.from.kind === 'overview') setPhase({ kind: 'ask-demo' });
             else finish();
           }}
@@ -492,7 +448,6 @@ export function TourProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Модальный вопрос между этапами обучения. */
 function TourDialog({
   emoji, title, text, primary, secondary, onPrimary, onSecondary, busy,
 }: {
@@ -551,7 +506,6 @@ export function useTour() {
   return useContext(TourContext);
 }
 
-/** Оборачивает элемент, к которому относится шаг тура. */
 export function TourTarget({
   id,
   children,
@@ -594,11 +548,11 @@ function TourOverlay({
   title: string;
   text: string;
   hint?: string;
-  /** Шаг ждёт действия пользователя — кнопки «Далее» не будет. */
+
   waiting: boolean;
-  /** Пропускать нажатия к подсвеченному элементу. */
+
   interactive: boolean;
-  /** Поверх открыт диалог — шаг только фон. */
+
   muted?: boolean;
   index: number;
   total: number;
@@ -615,7 +569,6 @@ function TourOverlay({
     setGaveUp(false);
 
     if (!element) {
-      // Элемента нет — либо экран ещё не отрисовался, либо шаг неактуален.
       const timer = window.setTimeout(() => setGaveUp(true), TARGET_TIMEOUT_MS);
       return () => window.clearTimeout(timer);
     }
@@ -623,9 +576,9 @@ function TourOverlay({
     element.scrollIntoView({ block: 'center', behavior: 'smooth' });
 
     const measure = () => setRect(element.getBoundingClientRect());
-    // Ждём, пока доедет плавная прокрутка и анимация появления экрана.
+
     const timer = window.setTimeout(measure, 420);
-    // Элемент может двигаться: открылся лист, подъехала клавиатура.
+
     const ticker = window.setInterval(measure, 500);
 
     window.addEventListener('resize', measure);
@@ -638,7 +591,6 @@ function TourOverlay({
     };
   }, [element]);
 
-  // Элемент так и не появился — не держим пользователя, идём дальше.
   useEffect(() => {
     if (gaveUp && !waiting) onNext();
   }, [gaveUp, waiting, onNext]);
@@ -663,13 +615,12 @@ function TourOverlay({
       }
     : null;
 
-  // Карточку ставим с той стороны, где больше места.
   const below = spot ? spot.top + spot.height / 2 < window.innerHeight / 2 : true;
 
   const card = (
     <motion.div
       className="absolute left-4 right-4 rounded-3xl bg-surface p-4 shadow-sheet"
-      // Карточка кликабельна всегда, даже когда фон пропускает нажатия.
+
       style={{
         pointerEvents: muted ? 'none' : 'auto',
         ...(spot
@@ -700,7 +651,6 @@ function TourOverlay({
         </button>
       </div>
 
-      {/* Полоса прогресса вместо точек: шагов много. */}
       <div className="mt-3.5 flex items-center gap-3">
         <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted/25">
           <motion.div
@@ -716,7 +666,6 @@ function TourOverlay({
       </div>
 
       {waiting ? (
-        // Шаг завершает сам пользователь — показываем, чего ждём.
         <div className="mt-3 flex items-center justify-between gap-3">
           <span className="flex items-center gap-2 text-[13px] text-accent">
             <span className="h-2 w-2 animate-pulse rounded-full bg-accent" />
@@ -769,13 +718,11 @@ function TourOverlay({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        // В интерактиве слой не должен перехватывать нажатия: их получает
-        // подсвеченный элемент. Карточка возвращает себе кликабельность сама.
+
         style={{ pointerEvents: interactive || muted ? 'none' : 'auto' }}
       >
         {spot ? (
           interactive ? (
-            // Затемнение четырьмя полосами вокруг цели — центр остаётся живым.
             <>
               <Shade style={{ top: 0, left: 0, right: 0, height: Math.max(spot.top, 0) }} />
               <Shade style={{ top: spot.top + spot.height, left: 0, right: 0, bottom: 0 }} />
@@ -818,7 +765,6 @@ function TourOverlay({
   );
 }
 
-/** Полупрозрачная полоса затемнения вокруг подсвеченной области. */
 function Shade({ style }: { style: React.CSSProperties }) {
   return <div className="absolute bg-black/74" style={{ ...style, pointerEvents: 'auto' }} />;
 }

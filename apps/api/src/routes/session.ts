@@ -11,11 +11,9 @@ import { TIME_PATTERN } from '../lib/dates.js';
 
 export const sessionRouter = Router();
 
-/** Профиль, бюджеты и настройки. Вызывается при старте Mini App. */
 sessionRouter.get(
   '/',
   ah(async (req, res) => {
-    // start_param вида join_ABCD1234 — пользователь пришёл по приглашению.
     if (req.startParam?.startsWith('join_')) {
       await joinByCode(req.user.id, req.startParam.slice('join_'.length)).catch(() => null);
     }
@@ -52,12 +50,11 @@ sessionRouter.get(
 );
 
 const settingsSchema = z.object({
-  // Курс есть только для валют из списка приложения.
   baseCurrency: z.string().length(3).refine(isKnownCurrency, 'Неизвестная валюта').optional(),
   theme: z.enum(['system', 'light', 'dark']).optional(),
   dailyReminder: z.boolean().optional(),
   dailyAlways: z.boolean().optional(),
-  // Раньше подходило и «99:99» — напоминание после этого молча не приходило.
+
   dailyReminderTime: z.string().regex(TIME_PATTERN, 'Некорректное время').optional(),
   tzOffsetMinutes: z.number().int().min(-840).max(840).optional(),
 });
@@ -89,7 +86,6 @@ sessionRouter.patch(
   }),
 );
 
-/** Отметка о просмотренной подсказке, чтобы не показывать её снова. */
 sessionRouter.post(
   '/tips/:tip/seen',
   ah(async (req, res) => {
@@ -110,7 +106,6 @@ sessionRouter.post(
   }),
 );
 
-/** Сброс подсказок — чтобы можно было пройти обучение заново. */
 sessionRouter.post(
   '/tips/reset',
   ah(async (req, res) => {

@@ -1,22 +1,12 @@
-/**
- * Пастельная палитра для диаграмм.
- *
- * Цвета категорий в базе насыщенные — они хорошо работают точкой в списке,
- * но кольцо из шести таких цветов дерётся само с собой. Поэтому для графиков
- * мы приглушаем исходный цвет: оставляем оттенок (категория остаётся узнаваемой),
- * но сажаем насыщенность и поднимаем светлоту в пастельный диапазон.
- */
-
-/** Запасные цвета — когда у категории цвет не задан или битый. */
 const FALLBACK = [
-  '#F2E3A6', // сливочно-жёлтый
-  '#C9DDB6', // шалфей
-  '#F3CBD9', // пыльно-розовый
-  '#C6D8F0', // пудрово-голубой
-  '#E3D2F2', // лиловый
-  '#F7D7C0', // персиковый
-  '#BEE1DA', // мятный
-  '#EBD9B4', // песочный
+  '#F2E3A6',
+  '#C9DDB6',
+  '#F3CBD9',
+  '#C6D8F0',
+  '#E3D2F2',
+  '#F7D7C0',
+  '#BEE1DA',
+  '#EBD9B4',
 ];
 
 const SATURATION = { min: 30, max: 50 };
@@ -82,25 +72,17 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${to255(r)}${to255(g)}${to255(b)}`;
 }
 
-/**
- * Пастельная версия цвета: тот же оттенок, приглушённая насыщенность.
- * `seed` выбирает запасной цвет, если исходный не распознан.
- */
 export function pastel(color: string | null | undefined, seed = 0): string {
   const rgb = color ? hexToRgb(color) : null;
   if (!rgb) return FALLBACK[Math.abs(seed) % FALLBACK.length];
 
   const [h, s, l] = rgbToHsl(...rgb);
-  // Серый оставляем серым: подкручивать насыщенность там нечему.
+
   if (s < 8) return hslToHex(h, s, clamp(l, 74, 86));
 
   return hslToHex(h, clamp(s, SATURATION.min, SATURATION.max), clamp(l, LIGHTNESS.min, LIGHTNESS.max));
 }
 
-/**
- * Тот же оттенок, но заметно темнее — для текста и иконок поверх пастели.
- * Пастельная заливка светлая, чёрный по ней выглядит грубо.
- */
 export function pastelInk(color: string | null | undefined, seed = 0): string {
   const rgb = hexToRgb(pastel(color, seed));
   if (!rgb) return '#4A4A52';

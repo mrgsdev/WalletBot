@@ -15,11 +15,9 @@ import { useIsFamilyBudget } from '../hooks/useCurrentBudget';
 import { useMainButton } from '../hooks/useMainButton';
 import { tg } from '../lib/telegram';
 
-// Порядок = порядок в наборе объёмных иконок из AccountIcon.
 const ICONS = ['💳', '💵', '💰', '🪙', '🥇', '🔐', '👛', '💼', '🧳', '🏦', '🐖', '🛍'];
 const COLORS = ['#6EC1FF', '#7ED97E', '#B57BFF', '#FF9F6E', '#FF6E8A', '#E6E86E', '#5B5BD6', '#7EE8C6'];
 
-/** Экран «Кошелёк»: счета, их балансы и переводы между ними. */
 export function WalletScreen({ onTransfer }: { onTransfer: () => void }) {
   const isFamily = useIsFamilyBudget();
   const { data: accounts = [], isLoading, isError, refetch } = useAccounts();
@@ -62,7 +60,7 @@ export function WalletScreen({ onTransfer }: { onTransfer: () => void }) {
         ) : (
           <div
             className="tabular font-bold leading-tight"
-            /* Кегль под длину: крупный итог иначе уезжает за край. */
+
             style={{
               fontSize: fontSizeForLength(formatMoney(total, baseCurrency, true), 34, 15, 18),
             }}
@@ -112,11 +110,6 @@ export function WalletScreen({ onTransfer }: { onTransfer: () => void }) {
             }
           />
         ) : (
-          /*
-           * Счета в разных валютах складывать нельзя, поэтому группируем их
-           * и показываем подытог по каждой валюте. Если валюта одна,
-           * заголовок группы не рисуем — он был бы лишним.
-           */
           <div className="space-y-3">
             {groups.map((group) => (
               <div key={group.currency}>
@@ -150,8 +143,7 @@ export function WalletScreen({ onTransfer }: { onTransfer: () => void }) {
                       }
                       iconBare
                       title={account.name}
-                      /* В личном бюджете участник один, поэтому «общий/личный»
-                         и имя владельца — лишний шум — валюта уже в заголовке группы. */
+
                       subtitle={
                         isFamily
                           ? account.isShared
@@ -293,7 +285,6 @@ function AccountEditor({
                   icon === value ? 'bg-content' : 'bg-elevated'
                 }`}
               >
-                {/* Кружок кнопки уже даёт фон, поэтому картинку кладём без подложки. */}
                 {ACCOUNT_ICON_IMAGES[value] ? (
                   <img
                     src={ACCOUNT_ICON_IMAGES[value]}

@@ -11,12 +11,6 @@ const ITEMS = [
   { to: '/more', label: 'Ещё', Icon: Settings2 },
 ];
 
-/**
- * Плавающая тёмная пилюля навигации.
- *
- * Неактивные вкладки — только иконка, активная разворачивается в подпись:
- * так бар остаётся узким, но всегда отвечает, где пользователь находится.
- */
 export function BottomNav({ onAdd }: { onAdd: (type?: TransactionType) => void }) {
   const location = useLocation();
 

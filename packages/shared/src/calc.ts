@@ -1,9 +1,3 @@
-/**
- * Мини-калькулятор для экрана ввода операции.
- * Поддерживает + − × ÷ с приоритетом умножения/деления и десятичную запятую.
- * Живёт в общем пакете, чтобы логику можно было покрыть тестами на бэкенде.
- */
-
 export type Operator = '+' | '-' | '*' | '/';
 
 const OPERATORS: Operator[] = ['+', '-', '*', '/'];
@@ -12,7 +6,6 @@ export function isOperator(char: string): char is Operator {
   return (OPERATORS as string[]).includes(char);
 }
 
-/** Нормализует пользовательский ввод: запятая → точка, символы × ÷ − → * / -. */
 export function normalizeExpression(input: string): string {
   return input
     .replace(/,/g, '.')
@@ -22,11 +15,6 @@ export function normalizeExpression(input: string): string {
     .replace(/\s+/g, '');
 }
 
-/**
- * Вычисляет выражение. Возвращает null, если выражение неполное или некорректное
- * (например, «75+» или деление на ноль) — интерфейс в этом случае просто
- * не показывает результат.
- */
 export function evaluateExpression(input: string): number | null {
   const expr = normalizeExpression(input);
   if (!expr) return null;
@@ -47,7 +35,6 @@ export function evaluateExpression(input: string): number | null {
       continue;
     }
     if (isOperator(char)) {
-      // Минус в начале выражения или сразу после оператора — знак числа.
       if (current === '' && char === '-' && (tokens.length === 0 || isOperator(tokens[tokens.length - 1] as Operator))) {
         current = '-';
         continue;
@@ -64,7 +51,6 @@ export function evaluateExpression(input: string): number | null {
   if (current === '' || current === '-' || current.endsWith('.')) return null;
   tokens.push(Number(current));
 
-  // Первый проход — умножение и деление.
   const reduced: (number | Operator)[] = [tokens[0]];
   for (let i = 1; i < tokens.length; i += 2) {
     const op = tokens[i] as Operator;
@@ -78,7 +64,6 @@ export function evaluateExpression(input: string): number | null {
     }
   }
 
-  // Второй проход — сложение и вычитание.
   let result = reduced[0] as number;
   for (let i = 1; i < reduced.length; i += 2) {
     const op = reduced[i] as Operator;
@@ -90,14 +75,6 @@ export function evaluateExpression(input: string): number | null {
   return Math.round((result + Number.EPSILON) * 100) / 100;
 }
 
-/**
- * Результат самой длинной законченной части выражения.
- *
- * Пока человек печатает, выражение регулярно оказывается незаконченным:
- * «2+», «2,0 + 2,». evaluateExpression в такие моменты честно возвращает
- * null, и на экране вместо набранной суммы появлялся ноль — будто ввод
- * сбросился. Отрезаем незаконченный хвост и считаем то, что уже набрано.
- */
 export function evaluatePartial(input: string): number | null {
   const expr = normalizeExpression(input);
   for (let end = expr.length; end > 0; end--) {
@@ -107,25 +84,16 @@ export function evaluatePartial(input: string): number | null {
   return null;
 }
 
-/** Содержит ли выражение хотя бы один оператор — нужно, чтобы решить, показывать ли строку выражения. */
 export function hasOperator(input: string): boolean {
   const expr = normalizeExpression(input);
-  // Ведущий минус оператором не считаем.
+
   return /[+\-*/]/.test(expr.slice(1));
 }
 
-/**
- * Максимальная сумма одной операции: 999 999 999,00.
- *
- * Ограничение не бухгалтерское, а интерфейсное: числа длиннее уже не
- * помещаются на табло калькулятора и в карточки, а практического смысла
- * в них нет — это почти всегда опечатка или проверка на прочность.
- */
 export const MAX_AMOUNT = 999_999_999.99;
-/** Столько знаков помещается в целой части. */
+
 const MAX_WHOLE_DIGITS = 9;
 
-/** Добавляет символ к выражению, не допуская двух операторов подряд и двух точек в числе. */
 export function pushToken(expression: string, token: string): string {
   const normalized = normalizeExpression(token);
 
@@ -144,24 +112,17 @@ export function pushToken(expression: string, token: string): string {
 
   const lastNumber = expression.split(/[+\-*/]/).pop() ?? '';
 
-  /*
-   * Больше двух знаков после запятой набрать нельзя: сумма всё равно
-   * округлится при сохранении, и на экране получилось бы одно, а в базе другое.
-   */
   const dot = lastNumber.indexOf('.');
   if (dot !== -1 && lastNumber.length - dot - 1 >= 2) return expression;
 
-  // Целая часть не длиннее девяти знаков — это и есть предел 999 999 999.
   const whole = dot === -1 ? lastNumber : lastNumber.slice(0, dot);
   if (dot === -1 && whole.replace('-', '').length >= MAX_WHOLE_DIGITS) return expression;
 
-  // Не даём набирать «007».
   if (lastNumber === '0') return expression.slice(0, -1) + normalized;
 
   return expression + normalized;
 }
 
-/** Красивое отображение выражения: точка → запятая, * → ×, / → ÷. */
 export function formatExpression(expression: string): string {
   return expression
     .replace(/\./g, ',')

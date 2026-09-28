@@ -6,7 +6,7 @@ export default defineConfig({
     setupFiles: ['./tests/setupEnv.ts'],
     testTimeout: 30_000,
     hookTimeout: 60_000,
-    // Тесты работают с одной SQLite-базой, поэтому только один поток.
+
     pool: 'forks',
     poolOptions: { forks: { singleFork: true } },
   },

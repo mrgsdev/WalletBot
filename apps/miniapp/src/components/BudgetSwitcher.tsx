@@ -7,12 +7,6 @@ import { BudgetIcon } from './BudgetIcon';
 import { Sheet } from './Sheet';
 import { tg } from '../lib/telegram';
 
-/**
- * Переключатель бюджета в шапке главного экрана и статистики.
- *
- * `variant='pill'` — акцентная фиолетовая пилюля из редизайна: на главной она
- * стоит рядом с балансом и отвечает на вопрос «чей это баланс».
- */
 export function BudgetSwitcher({ variant = 'default' }: { variant?: 'default' | 'pill' }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();

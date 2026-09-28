@@ -11,16 +11,12 @@ interface Props {
   data: TrendDatum[];
   color?: string;
   height?: number;
-  /** Индекс подсвеченной точки; по умолчанию — последняя. */
+
   activeIndex?: number;
   onSelect?: (index: number) => void;
   showArea?: boolean;
 }
 
-/**
- * Сглаженная линия тренда (кривая Catmull-Rom, переведённая в кубические Безье) —
- * без резких углов, как на референсе.
- */
 export function TrendLine({
   data,
   color = '#D8F24A',
@@ -30,8 +26,7 @@ export function TrendLine({
   showArea = true,
 }: Props) {
   const gradientId = useId();
-  // Заливка — пастельная, сама линия темнее того же оттенка: так график
-  // остаётся читаемым и не выбивается из палитры остальных диаграмм.
+
   const areaColor = pastel(color);
   const lineColor = pastelInk(color);
   const width = 320;
@@ -101,7 +96,6 @@ export function TrendLine({
         />
       )}
 
-      {/* Прозрачные зоны для тапа по месяцу. */}
       {onSelect &&
         points.map((p, i) => (
           <rect
@@ -119,7 +113,6 @@ export function TrendLine({
   );
 }
 
-/** Catmull-Rom → кубический Безье: даёт плавную кривую через все точки. */
 function smoothPath(points: { x: number; y: number }[]): string {
   if (points.length < 2) {
     const p = points[0];

@@ -5,18 +5,10 @@ export type PeriodKind = 'week' | 'month' | 'quarter';
 export interface PeriodTab {
   key: string;
   label: string;
-  /** Любая дата внутри периода — её отправляем в API как anchor. */
+
   anchor: Date;
 }
 
-/**
- * Вкладки периодов для верхней ленты экрана статистики.
- *
- * Якорь строится в UTC и указывает на середину периода. Локальная дата тут
- * не годится: «1 сентября 00:00» в поясе UTC+3 — это «31 августа 21:00 UTC»,
- * и сервер, работающий в UTC, посчитал бы статистику за август.
- * Середина периода устойчива к любому смещению пояса.
- */
 export function buildPeriodTabs(kind: PeriodKind, count = 12): PeriodTab[] {
   const now = new Date();
   const year = now.getFullYear();
@@ -25,7 +17,6 @@ export function buildPeriodTabs(kind: PeriodKind, count = 12): PeriodTab[] {
 
   if (kind === 'month') {
     for (let i = count - 1; i >= 0; i--) {
-      // 15-е число: ни один часовой пояс не выкинет его в соседний месяц.
       const anchor = new Date(Date.UTC(year, month - i, 15, 12));
       const y = anchor.getUTCFullYear();
       const m = anchor.getUTCMonth();
@@ -41,7 +32,6 @@ export function buildPeriodTabs(kind: PeriodKind, count = 12): PeriodTab[] {
   if (kind === 'quarter') {
     const currentQuarter = Math.floor(month / 3);
     for (let i = 5; i >= 0; i--) {
-      // Середина второго месяца квартала.
       const anchor = new Date(Date.UTC(year, (currentQuarter - i) * 3 + 1, 15, 12));
       const y = anchor.getUTCFullYear();
       const q = Math.floor(anchor.getUTCMonth() / 3);
@@ -54,8 +44,7 @@ export function buildPeriodTabs(kind: PeriodKind, count = 12): PeriodTab[] {
     return tabs;
   }
 
-  // Недели: середина каждой из последних 8 недель (четверг).
-  const dayOfWeek = (now.getDay() + 6) % 7; // 0 = понедельник
+  const dayOfWeek = (now.getDay() + 6) % 7;
   for (let i = 7; i >= 0; i--) {
     const monday = new Date(Date.UTC(year, month, now.getDate() - dayOfWeek - i * 7, 12));
     const thursday = new Date(monday.getTime() + 3 * 24 * 3600_000);

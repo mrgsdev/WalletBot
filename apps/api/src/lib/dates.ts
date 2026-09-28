@@ -1,6 +1,5 @@
 export type Period = 'week' | 'month' | 'quarter' | 'year';
 
-/** Время суток «ЧЧ:ММ» с проверкой диапазона, а не только формата. */
 export const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export interface Range {
@@ -16,17 +15,13 @@ function endOfDay(d: Date): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
 }
 
-/**
- * Диапазон периода, содержащего дату `anchor`.
- * Неделя считается с понедельника.
- */
 export function rangeFor(period: Period, anchor: Date): Range {
   const y = anchor.getUTCFullYear();
   const m = anchor.getUTCMonth();
 
   switch (period) {
     case 'week': {
-      const day = (anchor.getUTCDay() + 6) % 7; // 0 = понедельник
+      const day = (anchor.getUTCDay() + 6) % 7;
       const from = startOfDay(new Date(Date.UTC(y, m, anchor.getUTCDate() - day)));
       const to = endOfDay(new Date(Date.UTC(y, m, anchor.getUTCDate() - day + 6)));
       return { from, to };
@@ -51,10 +46,6 @@ export function rangeFor(period: Period, anchor: Date): Range {
   }
 }
 
-/**
- * Диапазон предыдущего периода того же типа.
- * Нужен для сравнения «сколько было в прошлом месяце».
- */
 export function previousRange(period: Period, anchor: Date): Range {
   const y = anchor.getUTCFullYear();
   const m = anchor.getUTCMonth();
@@ -64,7 +55,7 @@ export function previousRange(period: Period, anchor: Date): Range {
     case 'week':
       return rangeFor('week', new Date(Date.UTC(y, m, d - 7)));
     case 'month':
-      // Берём первое число, чтобы не соскользнуть с 31-го на другой месяц.
+
       return rangeFor('month', new Date(Date.UTC(y, m - 1, 1)));
     case 'quarter':
       return rangeFor('quarter', new Date(Date.UTC(y, Math.floor(m / 3) * 3 - 3, 1)));
@@ -73,7 +64,6 @@ export function previousRange(period: Period, anchor: Date): Range {
   }
 }
 
-/** Подпись периода сравнения: «к августу», «к прошлой неделе». */
 export function previousLabel(period: Period, anchor: Date): string {
   switch (period) {
     case 'week':
@@ -89,7 +79,6 @@ export function previousLabel(period: Period, anchor: Date): string {
   }
 }
 
-/** Названия месяцев в дательном падеже — «к августу». */
 const MONTHS_DATIVE = [
   'январю', 'февралю', 'марту', 'апрелю', 'маю', 'июню',
   'июлю', 'августу', 'сентябрю', 'октябрю', 'ноябрю', 'декабрю',
@@ -100,7 +89,6 @@ export const MONTHS_SHORT = [
   'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек',
 ];
 
-/** Названия месяцев в родительном падеже: «с августа». */
 export const MONTHS_GENITIVE = [
   'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
   'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
@@ -111,7 +99,6 @@ export const MONTHS_FULL = [
   'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
 ];
 
-/** Последние `count` месяцев, включая месяц даты `anchor`. */
 export function lastMonths(anchor: Date, count: number): { year: number; month: number; label: string; key: string }[] {
   const out: { year: number; month: number; label: string; key: string }[] = [];
   for (let i = count - 1; i >= 0; i--) {
@@ -138,13 +125,6 @@ export function parseDate(value: unknown, fallback = new Date()): Date {
   return Number.isNaN(d.getTime()) ? fallback : d;
 }
 
-/**
- * Верхняя граница фильтра по дате.
- *
- * «2026-09-10» разбирается в полночь UTC, поэтому условие `date <= to`
- * отсекало весь выбранный день, кроме самой полуночи: фильтр «с 10 по 10
- * сентября» не возвращал ничего. Дотягиваем до конца суток.
- */
 export function parseDayEnd(value: unknown, fallback = new Date()): Date {
   return endOfDay(parseDate(value, fallback));
 }

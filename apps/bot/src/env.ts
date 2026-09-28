@@ -3,11 +3,6 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-/**
- * Ищем .env, поднимаясь по дереву от текущего файла.
- * Так один и тот же код работает и из src (tsx), и из dist (node),
- * и не зависит от глубины вложенности.
- */
 function loadEnvFile() {
   let dir = path.dirname(fileURLToPath(import.meta.url));
   for (let i = 0; i < 6; i++) {
@@ -32,13 +27,9 @@ export const env = {
   miniappUrl: process.env.MINIAPP_URL ?? '',
   apiUrl: (process.env.API_PUBLIC_URL ?? 'http://localhost:3000').replace(/\/$/, ''),
   internalApiKey: process.env.INTERNAL_API_KEY ?? '',
-  /** Во сколько (по UTC) проверять регулярные платежи. */
+
   recurringCheckHour: Number(process.env.RECURRING_CHECK_HOUR ?? 9),
-  /**
-   * Прокси для обращений к api.telegram.org.
-   * Берём явный TELEGRAM_PROXY, иначе — стандартные HTTPS_PROXY/HTTP_PROXY,
-   * которые Node, в отличие от curl, сам не применяет.
-   */
+
   telegramProxy:
     process.env.TELEGRAM_PROXY ||
     process.env.HTTPS_PROXY ||

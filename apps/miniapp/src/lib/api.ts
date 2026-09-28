@@ -2,7 +2,6 @@ import { tg } from './telegram';
 
 const BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '/api';
 
-/** Текущий бюджет. Обновляется из useAppStore. */
 let currentBudgetId: number | null = null;
 
 export function setApiBudgetId(id: number | null) {
@@ -25,7 +24,7 @@ export class ApiError extends Error {
 
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
-  /** Не передавать текущий бюджет (например, для списка бюджетов). */
+
   skipScope?: boolean;
   query?: Record<string, string | number | boolean | null | undefined>;
 }
@@ -76,7 +75,6 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
       message = json.message ?? message;
       code = json.error ?? code;
     } catch {
-      /* тело не JSON */
     }
     throw new ApiError(response.status, message, code);
   }
@@ -89,7 +87,6 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   return (await response.json()) as T;
 }
 
-/** Ссылка на файл экспорта: initData передаём query-параметром, т.к. это переход по ссылке. */
 export function exportUrl(path: string, query: Record<string, string | number>): string {
   const params = new URLSearchParams({
     ...Object.fromEntries(Object.entries(query).map(([k, v]) => [k, String(v)])),

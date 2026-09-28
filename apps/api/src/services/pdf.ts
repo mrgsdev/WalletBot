@@ -10,10 +10,6 @@ import type { AuthUser } from '../middleware/auth.js';
 import type { Scope } from './scope.js';
 import type { ExportRange } from './excel.js';
 
-/*
- * pdfmake подключаем через createRequire: пакет CJS, а поставляемые типы
- * описывают браузерный API, где конструктора PdfPrinter нет вовсе.
- */
 const require = createRequire(import.meta.url);
 
 type FontSet = Record<string, Record<string, Buffer>>;
@@ -22,11 +18,6 @@ type Printer = { createPdfKitDocument(def: TDocumentDefinitions): PdfDoc };
 
 const PdfPrinter = require('pdfmake') as new (fonts: FontSet) => Printer;
 
-/**
- * Шрифт берём из самого pdfmake: он везёт Roboto в base64 для браузера,
- * а pdfkit принимает Buffer. Так в репозитории не появляется бинарник,
- * а встроенные шрифты PDF кириллицу не содержат вовсе.
- */
 const vfsModule = require('pdfmake/build/vfs_fonts.js') as
   | { pdfMake?: { vfs: Record<string, string> }; vfs?: Record<string, string> }
   | Record<string, string>;
@@ -47,12 +38,6 @@ const printer = new PdfPrinter({
   },
 });
 
-/**
- * Roboto из pdfmake несёт всего ~900 глифов: нет ни стрелок, ни эмодзи,
- * ни части валютных знаков. Неизвестный символ pdfkit рисует пустым
- * квадратом, поэтому читаем cmap шрифта и заранее вычищаем всё лишнее
- * из пользовательских названий.
- */
 function fontCoverage(buf: Buffer): Set<number> {
   const codes = new Set<number>();
   const tables = buf.readUInt16BE(4);
@@ -63,7 +48,6 @@ function fontCoverage(buf: Buffer): Set<number> {
   }
   if (cmap === null) return codes;
 
-  // Берём формат 12, а если его нет — обычный формат 4.
   let sub: number | null = null;
   let format = 0;
   const subtables = buf.readUInt16BE(cmap + 2);
@@ -106,7 +90,6 @@ function fontCoverage(buf: Buffer): Set<number> {
 
 const COVERAGE = fontCoverage(font('Roboto-Regular.ttf'));
 
-/** Текст от пользователя: без неподдерживаемых символов и переносов строк. */
 export function pdfText(value: string, fallback = 'Без названия'): string {
   let out = '';
   for (const char of value.replace(/\s/g, ' ')) {
@@ -117,7 +100,6 @@ export function pdfText(value: string, fallback = 'Без названия'): st
   return out.length > 0 ? out : fallback;
 }
 
-/** Больше строк в отчёт не кладём: дальше он перестаёт быть читаемым. */
 const MAX_ROWS = 1500;
 
 const TYPE_NAMES: Record<string, string> = {
@@ -141,7 +123,6 @@ function formatDate(date: Date): string {
   return `${d}.${m}.${date.getUTCFullYear()}`;
 }
 
-/** Отчёт за период: итоги, расходы по категориям и список операций. */
 export async function buildReportPdf(user: AuthUser, scope: Scope, range: ExportRange) {
   const { year, fromMonth, toMonth } = range;
 
@@ -190,7 +171,6 @@ export async function buildReportPdf(user: AuthUser, scope: Scope, range: Export
   income = round2(income);
   expense = round2(expense);
 
-  // ---------- расходы по категориям ----------
   const spending = [...byCategory.entries()]
     .map(([id, amount]) => ({
       name: categoryById.get(id)?.name ?? 'Без категории',
@@ -223,7 +203,6 @@ export async function buildReportPdf(user: AuthUser, scope: Scope, range: Export
           layout: 'lightHorizontalLines',
         };
 
-  // ---------- операции ----------
   const shown = transactions.slice(0, MAX_ROWS);
   const rows = shown.map((t) => {
     const title =

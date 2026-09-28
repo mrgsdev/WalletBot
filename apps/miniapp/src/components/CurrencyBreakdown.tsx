@@ -8,16 +8,15 @@ import { tg } from '../lib/telegram';
 
 export interface CurrencyGroup {
   currency: string;
-  /** Сумма в своей валюте. */
+
   amount: number;
-  /** Та же сумма, приведённая к валюте отчётов. */
+
   inBase: number;
-  /** Сколько единиц валюты в одной единице базовой. */
+
   rate: number;
   accounts: AccountDto[];
 }
 
-/** Группирует счета по валютам и пересчитывает каждую группу в валюту отчётов. */
 export function groupByCurrency(
   accounts: AccountDto[],
   base: string,
@@ -40,7 +39,6 @@ export function groupByCurrency(
     map.set(account.currency, group);
   }
 
-  // Базовая валюта первой, остальные — по убыванию вклада.
   return [...map.values()].sort((a, b) => {
     if (a.currency === base) return -1;
     if (b.currency === base) return 1;
@@ -48,13 +46,6 @@ export function groupByCurrency(
   });
 }
 
-/**
- * Разбивка баланса по валютам.
- *
- * Общий баланс сводит всё к валюте отчётов, и по нему не видно, сколько
- * денег лежит в каждой валюте на самом деле. Показываем разбивку, только
- * если валюта не одна — иначе это лишний шум.
- */
 export function CurrencyBreakdown({
   accounts,
   base,
@@ -107,7 +98,6 @@ export function CurrencyBreakdown({
 
               {group.currency !== base && (
                 <div className="mt-1 flex items-baseline justify-between gap-3 text-[13px] text-muted">
-                  {/* «1 € = 99 ₽» читается привычнее, чем «1 ₽ = 0,01 €». */}
                   <span>
                     1 {currencySymbol(group.currency)} ={' '}
                     {formatNumber(group.rate ? 1 / group.rate : 0, true)}{' '}

@@ -2,12 +2,6 @@ import { useEffect } from 'react';
 import type { ThemeMode } from '@budget/shared';
 import { tg } from '../lib/telegram';
 
-/**
- * Применяет тему к документу. «Системная» следует за темой Telegram.
- *
- * Базовая палитра в index.css — светлая (как в редизайне), поэтому в DOM
- * помечается именно тёмная тема: data-app-theme="dark".
- */
 export function applyTheme(mode: ThemeMode) {
   const root = document.documentElement;
 
@@ -26,11 +20,6 @@ function preferredScheme(): 'light' | 'dark' {
   }
 }
 
-/**
- * Держит тему в актуальном состоянии.
- * В системном режиме подписываемся и на Telegram, и на системную настройку —
- * приложение открывают и внутри клиента, и в обычном браузере.
- */
 export function useTheme(mode: ThemeMode) {
   useEffect(() => {
     applyTheme(mode);
@@ -49,7 +38,6 @@ export function useTheme(mode: ThemeMode) {
     try {
       tg.raw.onEvent('themeChanged', sync);
     } catch {
-      /* обычный браузер */
     }
 
     return () => {
@@ -57,7 +45,6 @@ export function useTheme(mode: ThemeMode) {
       try {
         tg.raw.offEvent('themeChanged', sync);
       } catch {
-        /* обычный браузер */
       }
     };
   }, [mode]);

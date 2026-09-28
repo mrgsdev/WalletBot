@@ -10,7 +10,6 @@ import { dueRecurring, markDailySent, usersToRemind } from '../services/reminder
 
 export const internalRouter = Router();
 
-/** Служебные ручки для бота: приглашения и данные для напоминаний. */
 internalRouter.use((req, _res, next) => {
   if (!env.internalApiKey || req.header('x-internal-key') !== env.internalApiKey) {
     return next(forbidden('Неверный внутренний ключ'));
@@ -18,17 +17,11 @@ internalRouter.use((req, _res, next) => {
   next();
 });
 
-/** Регистрация пользователя при /start в боте. */
 internalRouter.post(
   '/users/ensure',
   ah(async (req, res) => {
     const { telegramId, firstName, lastName, username, photoUrl, languageCode } = req.body ?? {};
 
-    /*
-     * Кто пришёл впервые, проверяем до регистрации: ensureUser возвращает
-     * пользователя одинаково и для нового, и для существующего. Лишний SELECT
-     * не жалко — /start для одного человека случается один раз.
-     */
     const known = await prisma.user.findUnique({
       where: { telegramId: String(telegramId) },
       select: { id: true },
@@ -43,14 +36,12 @@ internalRouter.post(
       language_code: languageCode,
     });
 
-    // Не ждём отправку: ответ боту не должен зависеть от доступности Telegram.
     if (!known) void notifyAdminAboutNewUser(user);
 
     res.json({ id: user.id, name: user.name });
   }),
 );
 
-/** Присоединение к семейному бюджету по коду из deep link. */
 internalRouter.post(
   '/budgets/join',
   ah(async (req, res) => {
@@ -66,22 +57,11 @@ const botBudgetSchema = z.object({
   kind: z.enum(['personal', 'family']).catch('family'),
 });
 
-/** Создание бюджета из чата бота. */
 internalRouter.post(
   '/budgets/create',
   ah(async (req, res) => {
     const { telegramId, name, kind } = req.body ?? {};
 
-    /*
-     * Те же ограничения, что и в POST /budgets для мини-аппа.
-     * Раньше их здесь не было, и через чат бота можно было завести
-     * бюджет с названием на тысячи символов — после чего список бюджетов
-     * и выгрузка переставали отправляться: сообщение не влезало в лимит
-     * Telegram, и чинить это было уже нечем.
-     *
-     * Переносы строк схлопываем: в карточке имя стоит заголовком,
-     * и многострочное название разваливало вёрстку.
-     */
     const cleaned = String(name ?? '').replace(/\s+/g, ' ').trim();
     const parsed = botBudgetSchema.safeParse({ name: cleaned, kind });
     if (!parsed.success) {
@@ -106,7 +86,6 @@ internalRouter.post(
   }),
 );
 
-/** Бюджеты пользователя со ссылками-приглашениями. */
 internalRouter.get(
   '/budgets/list',
   ah(async (req, res) => {
@@ -131,7 +110,6 @@ internalRouter.get(
   }),
 );
 
-/** Регулярные платежи, по которым сейчас нужно напомнить. */
 internalRouter.get(
   '/reminders/recurring',
   ah(async (_req, res) => {
@@ -150,7 +128,6 @@ internalRouter.post(
   }),
 );
 
-/** Отметка, что дневное напоминание доставлено. */
 internalRouter.post(
   '/reminders/daily/:userId/sent',
   ah(async (req, res) => {
@@ -159,7 +136,6 @@ internalRouter.post(
   }),
 );
 
-/** Пользователи, которым пора напомнить внести траты за день. */
 internalRouter.get(
   '/reminders/daily',
   ah(async (_req, res) => {

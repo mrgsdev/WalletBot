@@ -4,15 +4,6 @@ import type { AuthUser } from '../middleware/auth.js';
 import type { Scope } from './scope.js';
 import { visibleAccountIds } from './scope.js';
 
-/**
- * Демо-данные для обучения.
- *
- * У нового пользователя все экраны пустые, и обзорный тур показывать нечего:
- * ни диаграмм, ни истории, ни бюджета на месяц. Поэтому перед обучением
- * наполняем бюджет правдоподобной историей, а после — предлагаем удалить.
- */
-
-/** Детерминированный ГПСЧ: демо у всех выглядит одинаково предсказуемо. */
 function makeRandom(seed: number) {
   let state = seed;
   return () => {
@@ -23,7 +14,6 @@ function makeRandom(seed: number) {
 
 const DEMO_LIMIT = 120_000;
 
-/** Сколько демо-операций уже есть в бюджете. */
 export async function demoCount(scope: Scope): Promise<number> {
   return prisma.transaction.count({ where: { budgetId: scope.budgetId, isDemo: true } });
 }
@@ -38,10 +28,6 @@ export async function demoStatus(scope: Scope): Promise<DemoStatus> {
   return { hasDemo: count > 0, count };
 }
 
-/**
- * Наполняет бюджет историей за три месяца.
- * Повторный вызов ничего не делает — демо создаётся один раз.
- */
 export async function seedDemo(user: AuthUser, scope: Scope): Promise<DemoStatus> {
   const existing = await demoCount(scope);
   if (existing > 0) return { hasDemo: true, count: existing };
@@ -73,7 +59,6 @@ export async function seedDemo(user: AuthUser, scope: Scope): Promise<DemoStatus
   const now = new Date();
   let created = 0;
 
-  // Три месяца: этого хватает и на кольцевую диаграмму, и на график тренда.
   for (let back = 2; back >= 0; back--) {
     const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - back, 1));
     const year = date.getUTCFullYear();
@@ -151,7 +136,6 @@ export async function seedDemo(user: AuthUser, scope: Scope): Promise<DemoStatus
     }
   }
 
-  // Лимит на месяц, чтобы карточка бюджета была наглядной.
   const budget = await prisma.budget.findUnique({ where: { id: scope.budgetId } });
   if (budget && budget.monthlyLimit === null) {
     await prisma.budget.update({
@@ -163,20 +147,14 @@ export async function seedDemo(user: AuthUser, scope: Scope): Promise<DemoStatus
   return { hasDemo: true, count: created };
 }
 
-/**
- * Удаляет демо-операции и возвращает балансы счетов к реальным значениям.
- * Операции, добавленные пользователем вручную, не трогаются.
- */
 export async function clearDemo(user: AuthUser, scope: Scope): Promise<{ removed: number }> {
   const removed = await prisma.transaction.deleteMany({
     where: { budgetId: scope.budgetId, isDemo: true },
   });
 
-  // Балансы пересчитываем по оставшейся истории.
   const accountIds = await visibleAccountIds(user, scope);
   for (const id of accountIds) await recalcAccountBalance(id);
 
-  // Лимит возвращаем, только если его поставило демо.
   const budget = await prisma.budget.findUnique({ where: { id: scope.budgetId } });
   if (budget?.demoLimit) {
     await prisma.budget.update({

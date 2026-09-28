@@ -1,15 +1,5 @@
 import WebApp from '@twa-dev/sdk';
 
-/**
- * Тонкая обёртка над Telegram WebApp SDK.
- * Все вызовы безопасны вне Telegram — в обычном браузере превращаются в no-op,
- * чтобы приложение можно было разрабатывать в Chrome.
- */
-
-/**
- * Признак запуска внутри Telegram: наличие подписанного пользователя в initData.
- * Именно он, а не platform, надёжно отличает Telegram от обычного браузера.
- */
 const isTelegram = (): boolean => {
   try {
     return Boolean(WebApp?.initDataUnsafe?.user?.id);
@@ -27,7 +17,6 @@ export const tg = {
     return isTelegram();
   },
 
-  /** Подписанные данные пользователя — уходят в заголовке каждого запроса. */
   get initData(): string {
     try {
       return WebApp.initData ?? '';
@@ -45,7 +34,6 @@ export const tg = {
   },
 
   get colorScheme(): 'light' | 'dark' {
-    // Вне Telegram (локальная разработка) — светлая тема: она базовая для дизайна.
     if (!isTelegram()) return 'light';
     try {
       return WebApp.colorScheme ?? 'light';
@@ -58,53 +46,43 @@ export const tg = {
     try {
       WebApp.ready();
       WebApp.expand();
-      // Свайп вниз не должен закрывать приложение во время ввода суммы.
+
       WebApp.disableVerticalSwipes?.();
       WebApp.setHeaderColor?.('#000000');
       WebApp.setBackgroundColor?.('#000000');
     } catch {
-      /* обычный браузер */
     }
     applyViewportHeight();
     try {
       WebApp.onEvent('viewportChanged', applyViewportHeight);
     } catch {
-      /* обычный браузер */
     }
   },
 
   haptic: {
     light() {
-      try { WebApp.HapticFeedback.impactOccurred('light'); } catch { /* no-op */ }
+      try { WebApp.HapticFeedback.impactOccurred('light'); } catch {  }
     },
     medium() {
-      try { WebApp.HapticFeedback.impactOccurred('medium'); } catch { /* no-op */ }
+      try { WebApp.HapticFeedback.impactOccurred('medium'); } catch {  }
     },
     rigid() {
-      try { WebApp.HapticFeedback.impactOccurred('rigid'); } catch { /* no-op */ }
+      try { WebApp.HapticFeedback.impactOccurred('rigid'); } catch {  }
     },
     success() {
-      try { WebApp.HapticFeedback.notificationOccurred('success'); } catch { /* no-op */ }
+      try { WebApp.HapticFeedback.notificationOccurred('success'); } catch {  }
     },
     warning() {
-      try { WebApp.HapticFeedback.notificationOccurred('warning'); } catch { /* no-op */ }
+      try { WebApp.HapticFeedback.notificationOccurred('warning'); } catch {  }
     },
     error() {
-      try { WebApp.HapticFeedback.notificationOccurred('error'); } catch { /* no-op */ }
+      try { WebApp.HapticFeedback.notificationOccurred('error'); } catch {  }
     },
     select() {
-      try { WebApp.HapticFeedback.selectionChanged(); } catch { /* no-op */ }
+      try { WebApp.HapticFeedback.selectionChanged(); } catch {  }
     },
   },
 
-  /**
-   * Кнопка «Назад» с поддержкой вложенности.
-   *
-   * Экранов, которые её просят, может быть несколько (лист поверх листа).
-   * Раньше каждый снимал кнопку за собой и прятал её, хотя нижний экран был
-   * ещё открыт — после этого «Назад» переставала работать. Теперь обработчики
-   * лежат в стеке, а активен всегда только верхний.
-   */
   pushBackHandler(handler: () => void) {
     backStack.push(handler);
     syncBackButton();
@@ -142,7 +120,7 @@ export const tg = {
     try {
       if (active) WebApp.MainButton.showProgress(false);
       else WebApp.MainButton.hideProgress();
-    } catch { /* no-op */ }
+    } catch {  }
   },
 
   openLink(url: string) {
@@ -163,16 +141,13 @@ export const tg = {
   },
 
   close() {
-    try { WebApp.close(); } catch { /* no-op */ }
+    try { WebApp.close(); } catch {  }
   },
 };
-
-// ---------- Кнопка «Назад» ----------
 
 const backStack: Array<() => void> = [];
 let activeBackHandler: (() => void) | null = null;
 
-/** Держит на кнопке ровно один обработчик — верхний из стека. */
 function syncBackButton() {
   try {
     if (activeBackHandler) {
@@ -189,11 +164,9 @@ function syncBackButton() {
       WebApp.BackButton.hide();
     }
   } catch {
-    /* обычный браузер */
   }
 }
 
-/** Высота стабильного вьюпорта Telegram — учитывает клавиатуру и шапку. */
 function applyViewportHeight() {
   try {
     const height = WebApp.viewportStableHeight || WebApp.viewportHeight;
@@ -201,6 +174,6 @@ function applyViewportHeight() {
       document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`);
       return;
     }
-  } catch { /* обычный браузер */ }
+  } catch {  }
   document.documentElement.style.setProperty('--tg-viewport-height', '100dvh');
 }

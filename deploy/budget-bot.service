@@ -2,7 +2,6 @@
 Description=Budget Mini App — Telegram-бот
 After=network-online.target budget-api.service
 Wants=network-online.target
-# Бот ходит в API служебным ключом, поэтому поднимаем его следом.
 Requires=budget-api.service
 
 [Service]

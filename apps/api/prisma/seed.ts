@@ -1,8 +1,3 @@
-/**
- * Сид для локальной разработки: пользователь из DEV_USER_ID,
- * личный бюджет со счетами и историей операций за 8 месяцев,
- * чтобы экраны статистики не были пустыми.
- */
 import { env } from '../src/lib/env.js';
 import { prisma } from '../src/lib/prisma.js';
 import { ensureUser } from '../src/services/users.js';
@@ -10,7 +5,6 @@ import { createTransaction } from '../src/services/transactions.js';
 import type { AuthUser } from '../src/middleware/auth.js';
 import type { Scope } from '../src/services/scope.js';
 
-/** Детерминированный ГПСЧ — повторный сид даёт те же цифры. */
 function makeRandom(seed: number) {
   let state = seed;
   return () => {
@@ -49,7 +43,6 @@ async function main() {
     return;
   }
 
-  // Лимит на месяц, чтобы карточка бюджета была наглядной.
   await prisma.budget.update({
     where: { id: budget.id },
     data: { monthlyLimit: 120_000, limitCurrency: 'RUB' },

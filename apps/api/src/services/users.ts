@@ -5,10 +5,6 @@ import type { TelegramInitUser } from '../lib/telegram.js';
 import { displayName } from '../lib/telegram.js';
 import { createBudget } from './budgets.js';
 
-/**
- * Находит пользователя по telegram_id либо регистрирует нового
- * вместе с личным бюджетом, категориями и парой счетов.
- */
 export async function ensureUser(tgUser: TelegramInitUser) {
   const telegramId = String(tgUser.id);
   const name = displayName(tgUser);
@@ -25,7 +21,6 @@ export async function ensureUser(tgUser: TelegramInitUser) {
       ? await prisma.user.update({ where: { id: existing.id }, data: patch })
       : existing;
 
-    // Страховка: пользователь без единого бюджета остался бы без интерфейса.
     const budgets = await prisma.budgetMember.count({ where: { userId: user.id } });
     if (budgets === 0) {
       await createBudget(user.id, {
@@ -58,12 +53,10 @@ export async function ensureUser(tgUser: TelegramInitUser) {
   return user;
 }
 
-/** Экранирование для parse_mode=HTML: имя может содержать <, > или &. */
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** Текст уведомления администратору о новом пользователе. */
 export function newUserMessage(user: {
   name: string;
   username: string | null;
@@ -78,12 +71,6 @@ export function newUserMessage(user: {
   return lines.join('\n');
 }
 
-/**
- * Сообщает администратору о новом пользователе.
- *
- * Ошибка отправки не должна ломать регистрацию: человек уже нажал /start,
- * и если Telegram недоступен, он всё равно должен попасть в приложение.
- */
 export async function notifyAdminAboutNewUser(user: {
   name: string;
   username: string | null;

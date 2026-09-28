@@ -13,7 +13,6 @@ import { dayKey, formatDateFull, formatMoney } from '../lib/format';
 import { tg } from '../lib/telegram';
 import { useIsFamilyBudget } from '../hooks/useCurrentBudget';
 
-/** История операций с фильтрами по типу, счёту, категории и периоду. */
 export function HistoryScreen({ onEdit }: { onEdit: (transaction: TransactionDto) => void }) {
   const navigate = useNavigate();
   const isFamily = useIsFamilyBudget();

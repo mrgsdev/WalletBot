@@ -19,8 +19,6 @@ import { uploadsRouter, UPLOAD_DIR } from './routes/uploads.js';
 import { recurringRouter } from './routes/recurring.js';
 import { internalRouter } from './routes/internal.js';
 
-// systemd читает stdout через pipe, а Node буферизует запись в него.
-// Без этого журнал долгоживущего процесса отстаёт или остаётся пустым.
 for (const stream of [process.stdout, process.stderr]) {
   const handle = (stream as unknown as { _handle?: { setBlocking?: (v: boolean) => void } })._handle;
   handle?.setBlocking?.(true);
@@ -49,11 +47,7 @@ app.use(
   '/uploads',
   express.static(UPLOAD_DIR, {
     maxAge: '30d',
-    /*
-     * Каталог с пользовательскими файлами лежит на том же домене, что и
-     * приложение. nosniff не даёт браузеру угадать тип по содержимому,
-     * а CSP запрещает файлу выполнять что-либо, даже если он туда попал.
-     */
+
     setHeaders: (res) => {
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self'; sandbox");
@@ -65,10 +59,8 @@ app.use(requestLogger);
 
 app.get('/health', (_req, res) => res.json({ ok: true, env: env.nodeEnv }));
 
-// Служебные ручки бота живут до пользовательской аутентификации.
 app.use('/api/internal', internalRouter);
 
-// Всё остальное требует валидного Telegram initData.
 app.use('/api', authMiddleware, scopeMiddleware);
 
 app.use('/api/session', sessionRouter);
@@ -86,7 +78,6 @@ app.use('/api/recurring', recurringRouter);
 
 app.use((_req, res) => res.status(404).json({ error: 'not_found', message: 'Маршрут не найден' }));
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof HttpError) {
     return res.status(err.status).json({ error: err.code, message: err.message });

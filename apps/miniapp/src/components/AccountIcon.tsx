@@ -12,13 +12,6 @@ import shoppingIcon from '../assets/shopping.png';
 import suitcaseIcon from '../assets/suitcase.png';
 import vaultIcon from '../assets/vault.png';
 
-/**
- * Эмодзи счёта → объёмная иконка.
- *
- * Иконка счёта живёт в базе как эмодзи, и менять там данные ради оформления
- * не хочется: подменяем только отрисовку. Эмодзи остаётся ключом и запасным
- * вариантом — счёт со старой иконкой, которой нет в наборе, рисуется как раньше.
- */
 export const ACCOUNT_ICON_IMAGES: Record<string, string> = {
   '💳': cardIcon,
   '💵': cashIcon,
@@ -32,7 +25,7 @@ export const ACCOUNT_ICON_IMAGES: Record<string, string> = {
   '🏦': bankIcon,
   '🐖': piggyIcon,
   '🛍': shoppingIcon,
-  // Не иконка счёта, а псевдокарточка «Все счета» в сводке.
+
   '🗂': vaultIcon,
 };
 
@@ -43,7 +36,7 @@ export function AccountIcon({
   emojiClassName = 'text-[15px]',
 }: {
   icon: string;
-  /** Цвет счёта — подложка под эмодзи. У картинок свой цвет, подложка им не нужна. */
+
   color?: string;
   className?: string;
   emojiClassName?: string;

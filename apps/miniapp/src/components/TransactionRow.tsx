@@ -5,12 +5,6 @@ import { Money } from './Money';
 import { formatDateLabel } from '../lib/format';
 import { tg } from '../lib/telegram';
 
-/**
- * Строка операции в истории и на главном экране.
- *
- * Редизайн: иконка — скруглённый квадрат (читается как иконка приложения),
- * в подписи появилась дата, копейки в сумме приглушены.
- */
 export function TransactionRow({
   transaction,
   onClick,
@@ -20,7 +14,7 @@ export function TransactionRow({
   transaction: TransactionDto;
   onClick?: () => void;
   showAuthor?: boolean;
-  /** На главной дату показываем в строке — там нет заголовков групп по дням. */
+
   showDate?: boolean;
 }) {
   const isTransfer = transaction.type === 'transfer';
@@ -39,8 +33,6 @@ export function TransactionRow({
     transaction.comment,
   ].filter(Boolean);
 
-  // В семейном бюджете автора показываем аватаром на иконке категории:
-  // имя в подписи вытесняло счёт, а аватар узнаётся с одного взгляда.
   const author = showAuthor ? transaction.userName : null;
 
   return (

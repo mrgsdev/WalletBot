@@ -34,8 +34,6 @@ const createSchema = z.object({
   group: z.string().max(40).optional().nullable(),
 });
 
-/* Правка проверяется так же строго, как создание: раньше PATCH шёл мимо
- * схемы и принимал имя любой длины. */
 const patchSchema = z.object({
   name: z.string().min(1).max(40).optional(),
   type: z.never().optional(),
@@ -64,7 +62,7 @@ categoriesRouter.post(
         icon: parsed.data.icon,
         color: parsed.data.color,
         group: parsed.data.group ?? 'Прочее',
-        // Пользовательские категории нумеруем от 1000 — так их видно в UI.
+
         sortOrder: Math.max(1000, (maxOrder._max.sortOrder ?? 0) + 1),
       },
     });
@@ -99,7 +97,6 @@ categoriesRouter.patch(
   }),
 );
 
-/** Удаление доступно только для категорий без операций, иначе — архивация. */
 categoriesRouter.delete(
   '/:id',
   ah(async (req, res) => {

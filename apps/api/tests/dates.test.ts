@@ -18,14 +18,12 @@ describe('rangeFor', () => {
   });
 
   it('неделя начинается с понедельника', () => {
-    // 2025-09-10 — среда
     const { from, to } = rangeFor('week', new Date('2025-09-10T10:00:00Z'));
     expect(iso(from)).toBe('2025-09-08');
     expect(iso(to)).toBe('2025-09-14');
   });
 
   it('неделя для воскресенья не перескакивает вперёд', () => {
-    // 2025-09-14 — воскресенье
     const { from, to } = rangeFor('week', new Date('2025-09-14T10:00:00Z'));
     expect(iso(from)).toBe('2025-09-08');
     expect(iso(to)).toBe('2025-09-14');
@@ -88,7 +86,6 @@ describe('previousRange', () => {
   });
 
   it('месяц: с 31-го числа не соскальзывает через месяц', () => {
-    // Наивное «minus 1 month» от 31 марта дало бы 3 марта.
     const { from, to } = previousRange('month', new Date('2026-03-31T10:00:00Z'));
     expect(iso(from)).toBe('2026-02-01');
     expect(iso(to)).toBe('2026-02-28');
@@ -101,7 +98,6 @@ describe('previousRange', () => {
   });
 
   it('неделя: ровно предыдущая неделя с понедельника', () => {
-    // 2026-09-10 — четверг, текущая неделя 07–13 сентября.
     const { from, to } = previousRange('week', new Date('2026-09-10T10:00:00Z'));
     expect(iso(from)).toBe('2026-08-31');
     expect(iso(to)).toBe('2026-09-06');
@@ -148,7 +144,7 @@ describe('parseDayEnd', () => {
 
   it('включает операции, сделанные в течение выбранного дня', () => {
     const end = parseDayEnd('2026-09-10');
-    // Раньше условие date <= to отсекало весь день, кроме самой полуночи.
+
     expect(new Date('2026-09-10T19:52:43.415Z') <= end).toBe(true);
     expect(new Date('2026-09-11T00:00:00.000Z') <= end).toBe(false);
   });

@@ -17,10 +17,6 @@ import { useStatsAccount } from '../hooks/useStatsAccount';
 import { periodStructure, STRUCTURE_COLORS } from '../lib/structure';
 import { tg } from '../lib/telegram';
 
-/**
- * Сводная статистика (референс №3): карусель счетов, разбивка расходов
- * по крупным группам, соотношение доход/расход/накопления и тренд дохода.
- */
 export function SummaryScreen() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<'month' | 'year'>('month');
@@ -63,7 +59,6 @@ export function SummaryScreen() {
         <div className="w-10" />
       </header>
 
-      {/* ---------- Карусель счетов ---------- */}
       <div className="scroll-x flex snap-x snap-mandatory gap-3 px-4 pb-2 pt-1">
         {accountsLoading || allBalance === null ? (
           <Skeleton className="h-[132px] w-[280px] shrink-0 rounded-3xl" />
@@ -112,7 +107,6 @@ export function SummaryScreen() {
         </div>
       ) : (
         <div className="space-y-4 px-4 pt-3">
-          {/* ---------- Расходы ---------- */}
           <section className="rounded-3xl bg-card p-4">
             <div className="mb-3 flex items-center justify-between">
               <button
@@ -194,7 +188,6 @@ export function SummaryScreen() {
             )}
           </section>
 
-          {/* ---------- Доход / Расход / Накопления ---------- */}
           <section className="rounded-3xl bg-card p-4">
             <button
               type="button"
@@ -266,7 +259,6 @@ export function SummaryScreen() {
             </button>
           </section>
 
-          {/* ---------- Тренд ---------- */}
           <section className="rounded-3xl bg-card p-4 pb-2">
             <div className="mb-1 flex items-center justify-between">
               <button
@@ -342,7 +334,6 @@ function LegendRow({
   currency,
   strong = false,
 }: {
-  /** Без цвета строка идёт без точки: так помечен доход, он же основание. */
   color?: string;
   label: string;
   share: string;
@@ -410,7 +401,7 @@ function AccountCard({
       <div className="mt-5">
         <div
           className="tabular font-bold leading-tight"
-          /* Карточка фиксированной ширины (248px) — кегль под длину суммы. */
+
           style={{
             fontSize: fontSizeForLength(formatMoney(amount, currency, true), 24, 14, 13),
           }}

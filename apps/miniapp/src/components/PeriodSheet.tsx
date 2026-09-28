@@ -3,7 +3,6 @@ import { Sheet } from './Sheet';
 import { Wheel, WheelGroup, type WheelOption } from './Wheel';
 import { MONTHS_NOM } from '../lib/format';
 
-/** Барабан выбора периода, как нативный пикер даты. */
 export function PeriodSheet({
   open,
   onClose,
@@ -15,7 +14,7 @@ export function PeriodSheet({
 }: {
   open: boolean;
   onClose: () => void;
-  /** Без месяца остаётся одна колонка с годами. */
+
   withMonth?: boolean;
   month: number;
   year: number;
@@ -27,7 +26,6 @@ export function PeriodSheet({
     [],
   );
 
-  /* Пять прошлых лет и следующий: дальше смотреть нечего. */
   const years: WheelOption<number>[] = useMemo(() => {
     const current = new Date().getFullYear();
     return Array.from({ length: 7 }, (_, i) => current - 5 + i).map((value) => ({
@@ -68,7 +66,6 @@ export function PeriodSheet({
   );
 }
 
-/** Строка «Выбрать месяц → Сентябрь 2026», открывающая барабан. */
 export function PeriodRow({
   label,
   value,

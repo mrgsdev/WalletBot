@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { tg } from '../lib/telegram';
 
-/** Круглая кнопка-иконка — используется в шапках и на экране ввода. */
 export function IconButton({
   children,
   className = '',
@@ -24,7 +23,6 @@ export function IconButton({
   );
 }
 
-/** Пилюля с иконкой и текстом (счёт, валюта, категория, дата). */
 export function Chip({
   children,
   onClick,
@@ -61,7 +59,6 @@ export function Skeleton({ className = '' }: { className?: string }) {
   return <div className={`skeleton ${className}`} />;
 }
 
-/** Пустое состояние: иконка, заголовок, подсказка и опциональное действие. */
 export function EmptyState({
   icon,
   title,
@@ -73,7 +70,7 @@ export function EmptyState({
   title: string;
   hint?: string;
   action?: ReactNode;
-  /** Иконка сама себе картинка — рисуем без кружка-подложки. */
+
   iconBare?: boolean;
 }) {
   return (
@@ -96,7 +93,6 @@ export function EmptyState({
   );
 }
 
-/** Ошибка загрузки без падения интерфейса. */
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <EmptyState
@@ -141,7 +137,6 @@ export function PrimaryButton({
   );
 }
 
-/** Строка списка с иконкой-кружком слева. */
 export function ListRow({
   icon,
   iconColor,
@@ -153,7 +148,7 @@ export function ListRow({
 }: {
   icon: ReactNode;
   iconColor?: string;
-  /** Иконка сама себе картинка — рисуем без кружка-подложки. */
+
   iconBare?: boolean;
   title: ReactNode;
   subtitle?: ReactNode;

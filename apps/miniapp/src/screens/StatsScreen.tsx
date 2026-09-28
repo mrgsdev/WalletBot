@@ -19,9 +19,6 @@ import { useAppStore } from '../store/app';
 import { useStatsAccount } from '../hooks/useStatsAccount';
 import { tg } from '../lib/telegram';
 
-/**
- * Экран статистики с кольцевой диаграммой по категориям (референс №2).
- */
 export function StatsScreen() {
   const navigate = useNavigate();
   const [type, setType] = useState<'expense' | 'income'>('expense');
@@ -38,7 +35,6 @@ export function StatsScreen() {
   const [tabKey, setTabKey] = useState(() => tabs[tabs.length - 1]?.key);
   const activeTab = tabs.find((t) => t.key === tabKey) ?? tabs[tabs.length - 1];
 
-  // При смене типа периода выбираем последнюю вкладку.
   useEffect(() => {
     setTabKey(tabs[tabs.length - 1]?.key);
   }, [tabs]);
@@ -60,14 +56,7 @@ export function StatsScreen() {
     accountId === null ? 'Все счета' : accounts.find((a) => a.id === accountId)?.name ?? 'Все счета';
 
   const items = data?.items ?? [];
-  /*
-   * На кольцо пускаем только крупные категории.
-   *
-   * Хвост из мелких долей всё равно упирается в минимальную длину капсулы
-   * (короче собственной толщины дуга со скруглёнными концами не бывает),
-   * и кольцо рассыпается на одинаковые точки. Хвост сворачиваем в «Остальное»,
-   * полный список остаётся в легенде под графиком.
-   */
+
   const DONUT_LIMIT = 8;
   const restAmount = items.slice(DONUT_LIMIT).reduce((sum, item) => sum + item.amount, 0);
   const segments = [
@@ -135,7 +124,6 @@ export function StatsScreen() {
         </div>
       </header>
 
-      {/* Лента периодов */}
       <div ref={stripRef} className="scroll-x flex gap-4 px-5 py-3">
         {tabs.map((tab) => {
           const active = tab.key === activeTab?.key;
@@ -156,7 +144,6 @@ export function StatsScreen() {
             </button>
           );
         })}
-        {/* Хвостовой отступ, чтобы последний период тоже мог встать по центру. */}
         <span className="w-[45vw] shrink-0" aria-hidden />
       </div>
 
@@ -225,7 +212,7 @@ export function StatsScreen() {
                   <>
                     <div
                       className="tabular font-bold leading-none tracking-[-0.02em]"
-                      /* Внутренний диаметр кольца фиксирован — подгоняем кегль. */
+
                       style={{
                         fontSize: fontSizeForLength(
                           formatCompact(data!.total, data!.currency),
@@ -252,7 +239,6 @@ export function StatsScreen() {
             </DonutChart>
           </TourTarget>
 
-          {/* Список категорий в две колонки */}
           <TourTarget id="stats-list" className="grid grid-cols-2 gap-x-4 gap-y-1 px-5 pt-3">
             {items.map((item, index) => {
               const id = item.categoryId ?? 'none';

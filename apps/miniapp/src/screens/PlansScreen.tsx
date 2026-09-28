@@ -9,7 +9,6 @@ import { usePlans, useSavePlan } from '../lib/queries';
 import { formatMoney, MONTHS_NOM } from '../lib/format';
 import { tg } from '../lib/telegram';
 
-/** План на месяц по категориям и сравнение с фактом. */
 export function PlansScreen() {
   const navigate = useNavigate();
   const now = new Date();
@@ -49,11 +48,6 @@ export function PlansScreen() {
   const commit = (categoryId: number, value: string) => {
     const parsed = Number(value.replace(/\s/g, '').replace(',', '.'));
 
-    /*
-     * Раньше при нечисловом вводе мы просто выходили: поле продолжало
-     * показывать «abc», хотя на сервере оставалось старое значение.
-     * Теперь возвращаем поле к сохранённому плану.
-     */
     if (!Number.isFinite(parsed) || parsed < 0 || parsed > MAX_AMOUNT) {
       tg.haptic.error();
       setDraft((prev) => {

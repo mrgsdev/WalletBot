@@ -27,7 +27,7 @@ export function categoryDto(c: any): CategoryDto {
     color: c.color,
     group: c.group ?? null,
     isArchived: c.isArchived,
-    // Пользовательские категории нумеруются от 1000 — так их видно в интерфейсе.
+
     isCustom: c.sortOrder >= 1000,
   };
 }
@@ -61,7 +61,6 @@ export function transactionDto(t: any): TransactionDto {
   };
 }
 
-/** `viewerId` нужен, чтобы отдать флаг isOwner для текущего пользователя. */
 export function budgetDto(b: any, viewerId: number): BudgetDto {
   return {
     id: b.id,

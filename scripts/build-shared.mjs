@@ -1,10 +1,3 @@
-/**
- * postinstall: собирает @budget/shared, если это возможно.
- *
- * На сервере ставится `npm ci --omit=dev`, где нет TypeScript, а сам dist
- * приезжает готовым при выкладке. Поэтому здесь мягкая логика:
- * есть готовая сборка — ничего не делаем, нет компилятора — предупреждаем и выходим с нулём.
- */
 import { existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';

@@ -15,7 +15,6 @@ async function baseCurrencyFor(userId: number, override?: unknown): Promise<stri
   return settings?.baseCurrency ?? 'RUB';
 }
 
-/** Данные для кольцевой диаграммы по категориям. */
 statsRouter.get(
   '/categories',
   ah(async (req, res) => {
@@ -33,7 +32,6 @@ statsRouter.get(
   }),
 );
 
-/** Сводная статистика: доход/расход/накопления, группы расходов, тренд. */
 statsRouter.get(
   '/summary',
   ah(async (req, res) => {
@@ -49,7 +47,6 @@ statsRouter.get(
   }),
 );
 
-/** Бюджет на месяц: сколько осталось и сколько можно тратить в день. */
 statsRouter.get(
   '/month-budget',
   ah(async (req, res) => {

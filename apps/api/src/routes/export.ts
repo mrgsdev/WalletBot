@@ -27,7 +27,6 @@ function rangeFromQuery(query: Record<string, unknown>): ExportRange {
   return { year, fromMonth, toMonth };
 }
 
-/** Скачивание файла напрямую. */
 exportRouter.get(
   '/xlsx',
   ah(async (req, res) => {
@@ -44,11 +43,6 @@ exportRouter.get(
   }),
 );
 
-/**
- * Отправка выгрузки прямо в чат с ботом.
- * В Telegram скачивание файла из Mini App работает ненадёжно,
- * поэтому файл приходит сообщением от бота.
- */
 exportRouter.post(
   '/send',
   ah(async (req, res) => {
@@ -76,7 +70,6 @@ exportRouter.post(
   }),
 );
 
-/** Отчёт в PDF прямо в чат с ботом. */
 exportRouter.post(
   '/send-pdf',
   ah(async (req, res) => {
@@ -103,7 +96,6 @@ exportRouter.post(
   }),
 );
 
-/** Скачивание PDF напрямую. */
 exportRouter.get(
   '/pdf',
   ah(async (req, res) => {
@@ -116,7 +108,6 @@ exportRouter.get(
   }),
 );
 
-/** Быстрая выгрузка операций за произвольный период в CSV. */
 exportRouter.get(
   '/csv',
   ah(async (req, res) => {

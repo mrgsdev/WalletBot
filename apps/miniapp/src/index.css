@@ -2,25 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
- * Палитра редизайна: светлая тема — основная (белые карточки на светло-сером
- * фоне, тёмная полоса действий между ними), тёмная переопределяет те же токены.
- */
 :root {
-  --c-ink: 240 240 243;      /* фон страницы */
-  --c-surface: 255 255 255;  /* большие белые полотна: шапка и лист операций */
-  --c-card: 255 255 255;     /* карточки */
-  --c-elevated: 244 244 247; /* плитки и чипы внутри карточек */
+  --c-ink: 240 240 243;
+  --c-surface: 255 255 255;
+  --c-card: 255 255 255;
+  --c-elevated: 244 244 247;
   --c-line: 232 232 237;
   --c-content: 11 11 15;
   --c-muted: 138 138 147;
-  --c-accent: 108 92 231;    /* фиолетовая пилюля бюджета */
-  --c-bar: 14 14 17;         /* тёмная полоса действий и плавающий таб-бар */
+  --c-accent: 108 92 231;
+  --c-bar: 14 14 17;
   --c-bar-content: 255 255 255;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  /* Перезаписывается из Telegram SDK (viewportStableHeight). */
+
   --tg-viewport-height: 100dvh;
 
   color-scheme: light;
@@ -59,7 +55,6 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* Скрываем скроллбары — приложение должно выглядеть нативным. */
 ::-webkit-scrollbar {
   width: 0;
   height: 0;
@@ -93,21 +88,15 @@ body {
     -ms-overflow-style: none;
   }
 
-  /*
-   * Иконка-сквиркл вместо круга: в референсе у операций скруглённые квадраты —
-   * они читаются как иконки приложений и лучше держат сетку списка.
-   */
   .squircle {
     @apply flex items-center justify-center rounded-[30%];
   }
 
-  /* Крупная сумма: символ валюты приподнят и уменьшен, копейки приглушены. */
   .amount-lead {
     @apply tabular font-bold leading-none tracking-[-0.02em];
   }
 }
 
-/* Убираем зум при фокусе на инпуте в iOS. */
 input,
 textarea,
 select {

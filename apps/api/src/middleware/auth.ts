@@ -17,7 +17,6 @@ export interface AuthUser {
 export type { Scope };
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user: AuthUser;
@@ -27,13 +26,6 @@ declare global {
   }
 }
 
-/**
- * Аутентификация по Telegram initData. Пароли не используются:
- * подпись initData проверяется на каждый запрос.
- *
- * Дополнительно поддерживается сервисный вход бота
- * (X-Internal-Key + X-Telegram-Id) — для инвайтов и напоминаний.
- */
 export async function authMiddleware(req: Request, _res: Response, next: NextFunction) {
   try {
     const internalKey = req.header('x-internal-key');
@@ -62,7 +54,6 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
     }
 
     if (env.allowDevAuth) {
-      // Локальная разработка в обычном браузере — без подписи Telegram.
       req.user = await ensureUser({
         id: Number(env.devUserId),
         first_name: env.devUserName,
@@ -77,10 +68,6 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
   }
 }
 
-/**
- * Определяет бюджет запроса из заголовка X-Budget-Id и проверяет доступ.
- * Без заголовка берётся бюджет по умолчанию — первый личный.
- */
 export async function scopeMiddleware(req: Request, _res: Response, next: NextFunction) {
   try {
     const raw =

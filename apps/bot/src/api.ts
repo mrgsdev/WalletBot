@@ -1,6 +1,5 @@
 import { env } from './env.js';
 
-/** Клиент служебного API: бот ходит с внутренним ключом, без initData. */
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${env.apiUrl}/api/internal${path}`, {
     ...options,
@@ -17,7 +16,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       const json = (await response.json()) as { message?: string };
       message = json.message ?? message;
     } catch {
-      /* тело не JSON */
     }
     throw new Error(message);
   }
@@ -61,7 +59,6 @@ export const api = {
   listBudgets: (telegramId: number) =>
     request<BudgetInfo[]>(`/budgets/list?telegramId=${telegramId}`),
 
-  /** API сам решает, кому и когда пора напомнить — по времени и часовому поясу. */
   dueRecurring: () =>
     request<
       {
@@ -79,7 +76,6 @@ export const api = {
   markRecurringSent: (id: number) =>
     request<{ ok: true }>(`/reminders/recurring/${id}/sent`, { method: 'POST' }),
 
-  /** API сам сверяет часовые пояса и выбранное пользователем время. */
   dailyReminders: () =>
     request<{ userId: number; telegramId: string; name: string }[]>('/reminders/daily'),
 

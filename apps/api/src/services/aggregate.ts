@@ -1,7 +1,3 @@
-/**
- * Чистые функции агрегации статистики.
- * Вынесены из stats.ts, чтобы бизнес-логику можно было покрыть тестами без БД.
- */
 import type { CategoryStatItem, GroupStatItem, TrendPoint } from '@budget/shared';
 import { badRequest } from '../lib/errors.js';
 import { GROUP_COLORS } from '../lib/defaultCategories.js';
@@ -11,11 +7,10 @@ export function round2(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-/** Строка операции в виде, достаточном для агрегации. */
 export interface AggRow {
   type: 'income' | 'expense';
   date: Date;
-  /** Сумма в валюте счёта. */
+
   amount: number;
   accountCurrency: string;
   categoryId: number | null;
@@ -27,18 +22,6 @@ export interface AggRow {
 
 export type ToBase = (amount: number, fromCurrency: string) => number;
 
-/**
- * Строит конвертер в базовую валюту по карте курсов относительно USD.
- * Неизвестная валюта возвращается как есть — лучше показать сумму, чем ноль.
- */
-/**
- * Пересчёт в базовую валюту.
- *
- * Неизвестный код раньше означал курс один к одному, и статистика молча
- * складывала баты с рублями. Валюты проверяются на записи, так что сюда
- * неизвестный код попасть уже не может — а если попал, лучше громкая
- * ошибка, чем тихо неверные суммы.
- */
 export function makeConverter(usdRates: Record<string, number>, base: string): ToBase {
   const baseRate = usdRates[base];
   if (!baseRate) throw badRequest(`Нет курса для валюты отчётов: ${base}`);
@@ -56,12 +39,10 @@ export interface CategoryAggregation {
   items: CategoryStatItem[];
 }
 
-/** Ключ бакета: операции без категории собираем вместе. */
 function bucketKey(categoryId: number | null): string {
   return categoryId === null ? 'none' : String(categoryId);
 }
 
-/** Суммы по категориям в валюте отчёта, без долей и сравнения. */
 function sumByCategory(rows: AggRow[], toBase: ToBase): Map<string, number> {
   const sums = new Map<string, number>();
   for (const row of rows) {
@@ -71,20 +52,11 @@ function sumByCategory(rows: AggRow[], toBase: ToBase): Map<string, number> {
   return sums;
 }
 
-/**
- * Изменение к предыдущему периоду в процентах.
- * Если раньше трат не было, процент не определён: рост от нуля бесконечен,
- * и показывать «+100%» было бы враньём.
- */
 export function percentChange(current: number, previous: number): number | null {
   if (previous <= 0) return null;
   return round2(((current - previous) / previous) * 100);
 }
 
-/**
- * Суммы по категориям с долями и сравнением с предыдущим периодом.
- * `previousRows` — операции того же типа за предыдущий период.
- */
 export function aggregateByCategory(
   rows: AggRow[],
   toBase: ToBase,
@@ -132,7 +104,6 @@ export function aggregateByCategory(
   };
 }
 
-/** Суммы по крупным группам расходов. */
 export function aggregateByGroup(rows: AggRow[], toBase: ToBase): GroupStatItem[] {
   const groups = new Map<string, number>();
   let total = 0;
@@ -168,11 +139,6 @@ export interface Totals {
   savingsShare: number;
 }
 
-/**
- * Доход, расход и накопления за период.
- * Накопления — положительная разница дохода и расхода; доли считаются
- * от суммы всех трёх величин, как на референсной круговой диаграмме.
- */
 export function computeTotals(rows: AggRow[], toBase: ToBase): Totals {
   let income = 0;
   let expense = 0;
@@ -205,7 +171,6 @@ export interface MonthSlot {
   key: string;
 }
 
-/** Помесячный тренд по типу операции — точки для линейного графика. */
 export function buildTrend(rows: AggRow[], months: MonthSlot[], type: 'income' | 'expense', toBase: ToBase): TrendPoint[] {
   const byMonth = new Map<string, number>();
 
@@ -222,7 +187,6 @@ export function buildTrend(rows: AggRow[], months: MonthSlot[], type: 'income' |
   }));
 }
 
-/** Отбирает строки, попадающие в диапазон дат включительно. */
 export function inRange(rows: AggRow[], from: Date, to: Date): AggRow[] {
   return rows.filter((row) => row.date >= from && row.date <= to);
 }

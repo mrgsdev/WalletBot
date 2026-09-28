@@ -4,7 +4,6 @@ import { getRatesFor } from '../services/currency.js';
 
 export const ratesRouter = Router();
 
-/** Курсы валют относительно базы (кэш обновляется раз в сутки). */
 ratesRouter.get(
   '/',
   ah(async (req, res) => {

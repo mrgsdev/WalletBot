@@ -17,17 +17,10 @@ const bot = new Telegraf(env.botToken, {
   telegram: { agent: createTelegramAgent() },
 });
 
-/** Сколько бюджетов показываем в одном сообщении. */
 const BUDGET_LIST_LIMIT = 20;
-/** Кнопок «поделиться» — не больше, иначе клавиатура становится простынёй. */
+
 const SHARE_BUTTON_LIMIT = 5;
 
-/**
- * Ссылка на пересылку приглашения.
- *
- * Название обрезаем: кириллица при кодировании раздувается до шести байт
- * на символ, и длинное имя превращало ссылку в килобайтную простыню.
- */
 function shareUrl(link: string, budgetName: string): string {
   const text = `Присоединяйся к бюджету «${truncate(budgetName, 40)}»`;
   return `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
@@ -36,7 +29,6 @@ function shareUrl(link: string, budgetName: string): string {
 const openAppKeyboard = (label = '💰 Открыть бюджет') =>
   Markup.inlineKeyboard([[Markup.button.webApp(label, env.miniappUrl)]]);
 
-/** /start — регистрация и обработка инвайт-ссылки t.me/bot?start=join_CODE. */
 bot.start(async (ctx) => {
   const from = ctx.from;
   await api
@@ -104,16 +96,10 @@ bot.command('add', (ctx) =>
   ),
 );
 
-/** /budgets — список бюджетов с готовыми ссылками-приглашениями. */
 bot.command('budgets', async (ctx) => {
   try {
     const budgets = await api.listBudgets(ctx.from.id);
 
-    /*
-     * Одно сообщение, а не по штуке на бюджет: раньше десять бюджетов
-     * превращались в десять сообщений подряд, Telegram придерживал часть
-     * из них, и порядок в чате ломался.
-     */
     const shown = budgets.slice(0, BUDGET_LIST_LIMIT);
 
     const lines = shown.map((budget) => {
@@ -128,7 +114,6 @@ bot.command('budgets', async (ctx) => {
         ? `\n\nПоказаны первые ${shown.length} из ${budgets.length}. Остальные ищите в приложении.`
         : '';
 
-    // Кнопка «Поделиться» — только у семейных, иначе делиться нечем.
     const shareRows = shown
       .filter((budget) => budget.inviteLink)
       .slice(0, SHARE_BUTTON_LIMIT)
@@ -141,8 +126,7 @@ bot.command('budgets', async (ctx) => {
 
     await ctx.reply(lines.join('\n\n') + tail, {
       parse_mode: 'HTML',
-      // «Открыть бюджет» есть всегда: раньше карточка личного бюджета
-      // оставалась вообще без кнопок и была тупиком.
+
       ...Markup.inlineKeyboard([
         ...shareRows,
         [Markup.button.webApp('💰 Открыть бюджет', env.miniappUrl)],
@@ -153,7 +137,6 @@ bot.command('budgets', async (ctx) => {
   }
 });
 
-/** /newbudget Название — создать семейный бюджет прямо из чата. */
 bot.command('newbudget', async (ctx) => {
   const name = (ctx.payload ?? '').trim();
   if (!name) {
@@ -166,7 +149,7 @@ bot.command('newbudget', async (ctx) => {
     await ctx.reply(
       `Бюджет «${escapeHtml(budget.name)}» создан 🎉\n\n` +
         `Отправьте эту ссылку тем, кого хотите пригласить:\n${budget.inviteLink ?? budget.inviteCode ?? ''}`,
-      // Имя экранировано — без parse_mode пользователь увидел бы «&amp;».
+
       { parse_mode: 'HTML', ...openAppKeyboard() },
     );
   } catch (err) {
@@ -174,10 +157,6 @@ bot.command('newbudget', async (ctx) => {
   }
 });
 
-/*
- * Ответ на всё остальное. Раньше одна и та же фраза приходила и на текст,
- * и на стикер, и на голосовое — на стикер это выглядело нелепо.
- */
 bot.on('message', (ctx) => {
   const isText = 'text' in ctx.message;
   return ctx.reply(
@@ -191,7 +170,6 @@ bot.on('message', (ctx) => {
 bot.catch((err) => console.error('[bot] необработанная ошибка:', err));
 
 async function main() {
-  // Кнопка Menu Button слева от поля ввода открывает Mini App.
   if (env.miniappUrl) {
     await bot.telegram
       .setChatMenuButton({
@@ -212,8 +190,6 @@ async function main() {
 
   startReminders(bot);
 
-  // launch() в Telegraf v4 резолвится только когда бот остановлен,
-  // поэтому о старте сообщаем колбэком и не ждём промис здесь.
   void bot.launch(() => console.log(`[bot] запущен: @${env.botUsername || 'бот'}`));
 }
 
@@ -222,12 +198,10 @@ main().catch((err) => {
   process.exit(1);
 });
 
-/** Остановка может прийти до успешного launch() — тогда stop() бросает исключение. */
 function shutdown(signal: 'SIGINT' | 'SIGTERM') {
   try {
     bot.stop(signal);
   } catch {
-    /* бот и так не запустился */
   }
   process.exit(0);
 }
@@ -235,12 +209,6 @@ function shutdown(signal: 'SIGINT' | 'SIGTERM') {
 process.once('SIGINT', () => shutdown('SIGINT'));
 process.once('SIGTERM', () => shutdown('SIGTERM'));
 
-/**
- * Текст ошибки для пользователя.
- *
- * Сообщение приходит с сервера и подставляется в чат: без ограничения
- * длинный ответ уехал бы целиком и мог не влезть в лимит Telegram.
- */
 function errorText(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
   return truncate(message.replace(/\s+/g, ' ').trim() || 'неизвестная ошибка', 200);

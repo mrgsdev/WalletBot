@@ -1,12 +1,6 @@
 import { ProxyAgent, type Dispatcher } from 'undici';
 import { env } from '../lib/env.js';
 
-/**
- * Отправка сообщений и файлов пользователю от имени бота.
- *
- * Node не применяет HTTP_PROXY сам, поэтому там, где api.telegram.org доступен
- * только через прокси, диспетчер собирается вручную.
- */
 let dispatcher: Dispatcher | undefined;
 let dispatcherReady = false;
 
@@ -49,13 +43,12 @@ export async function sendMessage(telegramId: string, text: string) {
   );
 }
 
-/** Отправляет файл в чат с ботом. */
 export async function sendDocument(
   telegramId: string,
   file: Buffer,
   filename: string,
   caption?: string,
-  /* MIME задаём явно: Telegram по нему выбирает превью и иконку файла. */
+
   mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ) {
   const form = new FormData();

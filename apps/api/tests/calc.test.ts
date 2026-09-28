@@ -132,7 +132,6 @@ describe('pushToken: предел суммы', () => {
 
 describe('evaluatePartial', () => {
   it('считает по законченной части, пока выражение набирается', () => {
-    // На экране была сумма, человек нажал «,» — и она не должна исчезать.
     expect(evaluatePartial('2.0+2.')).toBe(4);
     expect(evaluatePartial('2+')).toBe(2);
     expect(evaluatePartial('2+3.')).toBe(5);

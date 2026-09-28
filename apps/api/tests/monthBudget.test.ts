@@ -5,7 +5,6 @@ const base = { currency: 'RUB' };
 
 describe('computeMonthBudget', () => {
   it('делит лимит на дни месяца, когда ещё ничего не потрачено', () => {
-    // 1 сентября, 30 дней в месяце, лимит 30 000 → 1000 в день.
     const r = computeMonthBudget({
       ...base,
       limit: 30_000,
@@ -20,7 +19,6 @@ describe('computeMonthBudget', () => {
   });
 
   it('различает дни для расчёта и дни до конца месяца', () => {
-    // 10 сентября: впереди ещё 20 дней, но тратить можно и сегодня — итого 21.
     const r = computeMonthBudget({
       ...base,
       limit: 30_000,
@@ -44,7 +42,6 @@ describe('computeMonthBudget', () => {
   });
 
   it('пересчитывает дневную норму от остатка', () => {
-    // 10 сентября, потрачено 12 000 из 30 000 → 18 000 на 21 оставшийся день.
     const r = computeMonthBudget({
       ...base,
       limit: 30_000,
@@ -57,7 +54,6 @@ describe('computeMonthBudget', () => {
   });
 
   it('считает сегодняшний день оставшимся', () => {
-    // В последний день месяца ещё можно потратить весь остаток.
     const r = computeMonthBudget({
       ...base,
       limit: 30_000,
@@ -96,7 +92,6 @@ describe('computeMonthBudget', () => {
   });
 
   it('считает средний расход и прогноз на месяц', () => {
-    // За 10 дней потрачено 10 000 → 1000 в день → 30 000 к концу месяца.
     const r = computeMonthBudget({
       ...base,
       limit: 30_000,
@@ -133,7 +128,6 @@ describe('computeMonthBudget', () => {
 
 describe('лимит в другой валюте', () => {
   it('пересчитанный лимит даёт пропорциональную дневную норму', () => {
-    // 30 000 ₽ при курсе 90 ₽/$ — это ~333,33 $, делённые на 30 дней.
     const rub = computeMonthBudget({
       currency: 'RUB', limit: 30_000, spent: 0,
       localDate: new Date('2026-09-01T10:00:00Z'),

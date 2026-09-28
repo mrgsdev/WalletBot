@@ -4,7 +4,6 @@ import { clearDemo, demoStatus, seedDemo } from '../services/demo.js';
 
 export const demoRouter = Router();
 
-/** Есть ли в бюджете демо-данные. */
 demoRouter.get(
   '/',
   ah(async (req, res) => {
@@ -12,7 +11,6 @@ demoRouter.get(
   }),
 );
 
-/** Наполнить бюджет демо-историей перед обучением. */
 demoRouter.post(
   '/seed',
   ah(async (req, res) => {
@@ -20,7 +18,6 @@ demoRouter.post(
   }),
 );
 
-/** Удалить демо-историю, оставив всё, что пользователь добавил сам. */
 demoRouter.delete(
   '/',
   ah(async (req, res) => {

@@ -16,7 +16,6 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: (failureCount, error) => {
-        // Ошибки авторизации повторять бессмысленно.
         const status = (error as { status?: number })?.status;
         if (status === 401 || status === 403) return false;
         return failureCount < 2;

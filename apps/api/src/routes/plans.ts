@@ -14,7 +14,6 @@ async function baseCurrencyFor(userId: number): Promise<string> {
   return settings?.baseCurrency ?? 'RUB';
 }
 
-/** План и факт по всем категориям выбранного месяца. */
 plansRouter.get(
   '/',
   ah(async (req, res) => {
@@ -83,7 +82,6 @@ const putSchema = z.object({
   plannedAmount: z.number().min(0).max(MAX_AMOUNT),
 });
 
-/** Установка плана по категории на месяц. */
 plansRouter.put(
   '/',
   ah(async (req, res) => {
@@ -96,7 +94,6 @@ plansRouter.put(
     });
     if (!category) throw notFound('Категория не найдена');
 
-    // Уникальный ключ (budgetId, categoryId, year, month) позволяет обойтись upsert.
     const plan = await prisma.budgetPlan.upsert({
       where: {
         budgetId_categoryId_year_month: {

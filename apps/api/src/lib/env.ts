@@ -3,11 +3,6 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-/**
- * Ищем .env, поднимаясь по дереву от текущего файла.
- * Так один и тот же код работает и из src (tsx), и из dist (node),
- * и не зависит от глубины вложенности.
- */
 function loadEnvFile() {
   let dir = path.dirname(fileURLToPath(import.meta.url));
   for (let i = 0; i < 6; i++) {
@@ -39,22 +34,12 @@ export const env = {
   botUsername: (process.env.BOT_USERNAME ?? '').replace(/^@/, ''),
   miniappUrl: process.env.MINIAPP_URL ?? '',
   internalApiKey: process.env.INTERNAL_API_KEY ?? '',
-  /**
-   * Куда слать уведомление о новом пользователе. Числовой chat_id:
-   * по @username Telegram в личку не пишет, это работает только для каналов.
-   * Пусто — уведомления выключены.
-   */
+
   adminChatId: process.env.ADMIN_CHAT_ID ?? '',
   exchangeApiBase: process.env.EXCHANGE_API_BASE ?? 'https://api.exchangerate.host',
-  /**
-   * Куда складывать фото чеков. На сервере это отдельный каталог с данными
-   * (/var/lib/budget/uploads), чтобы выкладка новой версии его не затирала.
-   */
+
   uploadDir: process.env.UPLOAD_DIR ?? '',
-  /**
-   * Прокси для обращений к api.telegram.org (отправка экспорта в чат).
-   * Node, в отличие от curl, системные HTTP_PROXY сам не применяет.
-   */
+
   telegramProxy:
     process.env.TELEGRAM_PROXY ||
     process.env.HTTPS_PROXY ||
@@ -65,7 +50,7 @@ export const env = {
   allowDevAuth: bool(process.env.ALLOW_DEV_AUTH, false),
   devUserId: process.env.DEV_USER_ID ?? '1000001',
   devUserName: process.env.DEV_USER_NAME ?? 'Dev User',
-  /** Максимальный возраст initData в секундах — защита от переигрывания. */
+
   initDataMaxAgeSec: Number(process.env.INIT_DATA_MAX_AGE_SEC ?? 24 * 60 * 60),
 };
 

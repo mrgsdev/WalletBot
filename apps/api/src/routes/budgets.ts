@@ -51,7 +51,6 @@ const patchSchema = z.object({
   limitCurrency: z.string().length(3).optional(),
 });
 
-/** Переименование бюджета и установка лимита на месяц. */
 budgetsRouter.patch(
   '/:id',
   ah(async (req, res) => {
@@ -79,7 +78,6 @@ budgetsRouter.patch(
   }),
 );
 
-/** Полное удаление бюджета: счета, операции и приглашение исчезают. */
 budgetsRouter.delete(
   '/:id',
   ah(async (req, res) => {
@@ -105,7 +103,6 @@ budgetsRouter.post(
   }),
 );
 
-/** Исключение участника — только создателем. */
 budgetsRouter.delete(
   '/:id/members/:userId',
   ah(async (req, res) => {
@@ -122,7 +119,6 @@ budgetsRouter.post(
   }),
 );
 
-/** Превращает личный бюджет в семейный, чтобы можно было пригласить близких. */
 budgetsRouter.post(
   '/:id/share',
   ah(async (req, res) => {

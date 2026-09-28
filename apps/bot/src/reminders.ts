@@ -7,11 +7,6 @@ import { log, logError } from './logging.js';
 
 const MINUTE = 60_000;
 
-/**
- * Пуш-напоминания:
- * Оба вида напоминаний проверяются каждую минуту: у каждого пользователя
- * своё время и свой часовой пояс, поэтому решение принимает API.
- */
 export function startReminders(bot: Telegraf) {
   const tick = async () => {
     const now = new Date();
@@ -19,7 +14,6 @@ export function startReminders(bot: Telegraf) {
     await sendDaily(bot, now);
   };
 
-  // Первый прогон через минуту после старта, дальше — раз в минуту.
   setTimeout(() => {
     void tick();
     setInterval(() => void tick(), MINUTE);
@@ -56,10 +50,7 @@ async function sendRecurring(bot: Telegraf) {
   }
 }
 
-/** Напоминание о незаписанных тратах — по локальному времени каждого пользователя. */
 async function sendDaily(bot: Telegraf, now: Date) {
-
-
   try {
     const users = await api.dailyReminders();
     for (const user of users) {

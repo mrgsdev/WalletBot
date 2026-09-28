@@ -12,17 +12,6 @@ import queenIcon from '../assets/budgets/queen.png';
 import rulerIcon from '../assets/budgets/ruler.png';
 import tiaraIcon from '../assets/budgets/tiara.png';
 
-/**
- * Иконка бюджета.
- *
- * В отличие от счетов и категорий, ключ здесь — не эмодзи, а короткий
- * идентификатор: картинки одной темы, подобрать им тринадцать разных
- * осмысленных эмодзи всё равно не вышло бы. В базе поле `icon` — строка
- * до 8 символов, коды в неё помещаются.
- *
- * Бюджеты, созданные раньше, хранят эмодзи (👛, 👨‍👩‍👧) — они и дальше
- * рисуются как эмодзи через запасную ветку.
- */
 export const BUDGET_ICON_IMAGES: Record<string, string> = {
   crown: crownIcon,
   crown2: crown2Icon,
@@ -39,7 +28,6 @@ export const BUDGET_ICON_IMAGES: Record<string, string> = {
   palace: palaceIcon,
 };
 
-/** Порядок в выборе иконки. */
 export const BUDGET_ICON_KEYS = Object.keys(BUDGET_ICON_IMAGES);
 
 export function BudgetIcon({

@@ -18,7 +18,6 @@ let eurAccount: number;
 let categoryId: number;
 let incomeCategoryId: number;
 
-/** Фиксируем курсы в БД, чтобы тесты не ходили во внешний API. */
 async function seedRates() {
   const rates: Record<string, number> = { USD: 1, EUR: 0.9, RUB: 90 };
   for (const [quote, rate] of Object.entries(rates)) {
@@ -35,7 +34,6 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  // Каскады снимут всё остальное.
   await prisma.user.deleteMany();
 
   const created = await prisma.user.create({
@@ -90,7 +88,6 @@ describe('расход', () => {
   });
 
   it('конвертирует валюту операции в валюту счёта', async () => {
-    // 10 EUR при курсах USD→EUR 0.9 и USD→RUB 90 равны 1000 RUB.
     const tx = await createTransaction(user, SCOPE, {
       type: 'expense',
       accountId: rubAccount,
@@ -156,7 +153,7 @@ describe('перевод между счетами', () => {
     });
 
     expect(await balanceOf(rubAccount)).toBe(1000);
-    // 9000 RUB = 100 USD = 90 EUR
+
     expect(await balanceOf(eurAccount)).toBe(190);
   });
 
@@ -250,7 +247,7 @@ describe('редактирование и удаление', () => {
     });
 
     expect(await balanceOf(rubAccount)).toBe(10_000);
-    expect(await balanceOf(eurAccount)).toBe(91); // 900 RUB = 9 EUR
+    expect(await balanceOf(eurAccount)).toBe(91);
   });
 
   it('удаление возвращает баланс к исходному', async () => {
@@ -292,7 +289,6 @@ describe('recalcAccountBalance', () => {
       amount: 5000, currency: 'RUB', date: new Date().toISOString(),
     });
 
-    // Портим баланс «руками» и просим пересчитать.
     await prisma.account.update({ where: { id: rubAccount }, data: { balance: 42 } });
     const balance = await recalcAccountBalance(rubAccount);
 
@@ -305,7 +301,7 @@ describe('recalcAccountBalance', () => {
       amount: 1800, currency: 'RUB', date: new Date().toISOString(),
     });
     await prisma.account.update({ where: { id: eurAccount }, data: { balance: 0 } });
-    expect(await recalcAccountBalance(eurAccount)).toBe(118); // 100 + 18
+    expect(await recalcAccountBalance(eurAccount)).toBe(118);
   });
 });
 

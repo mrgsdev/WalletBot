@@ -29,7 +29,7 @@ export default function App() {
   const location = useLocation();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<TransactionDto | null>(null);
-  // Полоса быстрых действий на главной открывает ввод сразу нужным типом.
+
   const [addType, setAddType] = useState<TransactionType>('expense');
 
   const { data: session, isError, error, refetch } = useSession();
@@ -41,13 +41,11 @@ export default function App() {
 
   useTheme(theme);
 
-  // Тема с сервера — источник истины, локальная копия нужна лишь до загрузки сессии.
   useEffect(() => {
     const serverTheme = session?.settings.theme;
     if (serverTheme && serverTheme !== theme) setTheme(serverTheme);
   }, [session?.settings.theme, theme, setTheme]);
 
-  // Выбираем бюджет: сохранённый, если он ещё существует, иначе — по умолчанию.
   useEffect(() => {
     if (!session) return;
     const exists = session.budgets.some((b) => b.id === budgetId);
@@ -73,7 +71,6 @@ export default function App() {
     setEditing(null);
   }, []);
 
-  // Быстрый ввод можно открыть сразу при запуске: из напоминания бота или по /#add.
   useEffect(() => {
     const wanted =
       tg.startParam === 'add' ||
@@ -106,13 +103,6 @@ export default function App() {
   return (
     <TourProvider>
       <div className="mx-auto min-h-full max-w-md">
-        {/*
-          Раньше здесь был AnimatePresence mode="wait": новый экран ждал, пока
-          доиграет уход предыдущего. При быстром переключении вкладок анимация
-          прерывалась, и не появлялся ни старый экран, ни новый — интерфейс
-          оставался пустым. Теперь анимируем только появление: смена ключа
-          пересоздаёт узел, и застревать нечему.
-        */}
         <ErrorBoundary key={location.pathname}>
           <motion.div
             initial={{ opacity: 0, y: 8 }}

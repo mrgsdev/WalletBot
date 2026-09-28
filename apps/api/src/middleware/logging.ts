@@ -1,12 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
 
-/**
- * Лог запросов в journald.
- *
- * Специально не пишем заголовок X-Telegram-Init-Data и тело: там подпись
- * пользователя и суммы операций, которым в логах не место.
- * /health пропускаем, чтобы проверки живости не забивали журнал.
- */
 export function requestLogger(req: Request, res: Response, next: NextFunction) {
   if (req.path === '/health') return next();
 
@@ -27,7 +20,6 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
       .filter(Boolean)
       .join(' ');
 
-    // Ошибки — в stderr, чтобы `journalctl -p err` показывал только их.
     if (res.statusCode >= 500) console.error(`[api] ${line}`);
     else console.log(`[api] ${line}`);
   });

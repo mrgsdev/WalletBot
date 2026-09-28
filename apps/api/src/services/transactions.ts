@@ -17,20 +17,15 @@ export interface TransactionInput {
   comment?: string | null;
   receiptPhotoUrl?: string | null;
   isRecurring?: boolean;
-  /** Операция из демо-набора — удаляется вместе с ним. */
+
   isDemo?: boolean;
 }
 
-/** Знак, с которым операция влияет на баланс счёта-источника. */
 function signFor(type: string): number {
   if (type === 'income') return 1;
-  return -1; // expense и transfer уменьшают баланс источника
+  return -1;
 }
 
-/**
- * Применяет операцию к балансам счетов.
- * factor = 1 — начислить, factor = -1 — откатить.
- */
 async function applyToBalances(tx: any, transaction: Transaction, factor: 1 | -1) {
   const delta = round2(signFor(transaction.type) * transaction.convertedAmount * factor);
   await tx.account.update({
@@ -128,8 +123,6 @@ export async function updateTransaction(
   }
 
   return prisma.$transaction(async (tx) => {
-    // Перечитываем внутри транзакции: иначе две одновременные правки
-    // откатили бы один и тот же старый вариант дважды.
     const existing = await tx.transaction.findUnique({ where: { id } });
     if (!existing) throw notFound('Операция не найдена');
 
@@ -164,8 +157,6 @@ export async function deleteTransaction(user: AuthUser, scope: Scope, id: number
   if (!before || !allowed.includes(before.accountId)) throw notFound('Операция не найдена');
 
   await prisma.$transaction(async (tx) => {
-    // Перечитываем внутри транзакции: два одновременных удаления иначе
-    // откатили бы баланс дважды.
     const existing = await tx.transaction.findUnique({ where: { id } });
     if (!existing) throw notFound('Операция не найдена');
 
@@ -174,7 +165,6 @@ export async function deleteTransaction(user: AuthUser, scope: Scope, id: number
   });
 }
 
-/** Пересчёт баланса счёта с нуля — используется после массовых правок. */
 export async function recalcAccountBalance(accountId: number): Promise<number> {
   const outgoing = await prisma.transaction.findMany({
     where: { accountId },

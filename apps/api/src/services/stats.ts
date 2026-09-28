@@ -21,7 +21,7 @@ interface StatsQuery {
   type: 'income' | 'expense';
   period: Period;
   anchor: Date;
-  /** null — «Все счета». */
+
   accountId: number | null;
   baseCurrency: string;
 }
@@ -32,7 +32,6 @@ async function resolveAccountIds(user: AuthUser, scope: Scope, accountId: number
   return visible.filter((id) => id === accountId);
 }
 
-/** Загружает операции в виде, пригодном для чистых агрегаторов. */
 async function loadRows(
   accountIds: number[],
   from: Date,
@@ -64,7 +63,6 @@ async function loadRows(
   }));
 }
 
-/** Разбивка по категориям за период — данные для кольцевой диаграммы. */
 export async function categoryStats(
   user: AuthUser,
   scope: Scope,
@@ -75,7 +73,6 @@ export async function categoryStats(
   const accountIds = await resolveAccountIds(user, scope, query.accountId);
   const toBase = makeConverter(await getUsdRates(), query.baseCurrency);
 
-  // Один и тот же тип операций за оба периода: текущий показываем, прошлый — для сравнения.
   const [rows, previousRows] = await Promise.all([
     loadRows(accountIds, from, to, [query.type]),
     loadRows(accountIds, previous.from, previous.to, [query.type]),
@@ -103,11 +100,10 @@ interface SummaryQuery {
   anchor: Date;
   accountId: number | null;
   baseCurrency: string;
-  /** Сколько точек показывать на графике тренда. */
+
   trendMonths: number;
 }
 
-/** Сводная статистика: доход/расход/накопления, группы расходов и тренд. */
 export async function summaryStats(
   user: AuthUser,
   scope: Scope,
@@ -121,7 +117,6 @@ export async function summaryStats(
   const trendFrom = new Date(Date.UTC(months[0].year, months[0].month, 1));
   const windowFrom = from < trendFrom ? from : trendFrom;
 
-  // Одна выборка на период отчёта и на окно тренда — они могут не совпадать.
   const rows = await loadRows(accountIds, windowFrom, to, ['income', 'expense']);
   const periodRows = inRange(rows, from, to);
 

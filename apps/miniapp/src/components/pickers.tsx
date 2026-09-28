@@ -114,10 +114,6 @@ export function CurrencyPickerSheet({
   );
 }
 
-/**
- * Сетка категорий с иконками — открывается тапом по категории
- * в нижней части экрана ввода операции.
- */
 export function CategoryPickerSheet({
   open,
   onClose,

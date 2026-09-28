@@ -12,20 +12,13 @@ interface Props {
   segments: DonutSegment[];
   size?: number;
   thickness?: number;
-  /** Зазор между сегментами в пикселях длины дуги. */
+
   gap?: number;
   children?: ReactNode;
   onSegmentClick?: (id: string | number) => void;
   activeId?: string | number | null;
 }
 
-/**
- * Кольцевая диаграмма из скруглённых сегментов-«таблеток» с зазорами.
- *
- * Рисуем вручную на SVG: библиотечные donut-чарты дают сплошное кольцо,
- * а нам нужны именно отдельные капсулы. Цвета приглушаются до пастельных —
- * шесть насыщенных дуг рядом дерутся друг с другом и с цифрой в центре.
- */
 export function DonutChart({
   segments,
   size = 240,
@@ -42,27 +35,16 @@ export function DonutChart({
   const visible = segments.filter((s) => s.value > 0);
   const count = visible.length;
 
-  /*
-   * Считаем ВИДИМУЮ длину капсулы, а не длину штриха.
-   *
-   * strokeLinecap="round" дорисовывает по половине толщины с каждого конца,
-   * поэтому капсула на экране длиннее штриха ровно на `thickness`. Если считать
-   * по штриху, соседи налезают друг на друга, когда зазор меньше толщины,
-   * а короткие сегменты раздуваются до размера средних.
-   */
   const minVisual = Math.min(thickness, circumference / Math.max(count, 1));
-  // Зазоры не должны сжать капсулы ниже минимума, даже если категорий много.
+
   const maxGap = count > 0 ? Math.max(0, (circumference - count * minVisual) / count) : 0;
   const effectiveGap = count > 1 ? Math.min(gap, maxGap) : 0;
   const available = circumference - effectiveGap * count;
 
-  // Доли по значению, но не короче минимума.
   const visuals = visible.map((segment) =>
     Math.max((total > 0 ? segment.value / total : 0) * available, minVisual),
   );
 
-  // Подтянув мелкие до минимума, мы вышли за окружность — забираем излишек
-  // у тех, кому есть что отдать, пропорционально их запасу.
   const excess = visuals.reduce((sum, v) => sum + v, 0) - available;
   if (excess > 0) {
     const slack = visuals.map((v) => Math.max(0, v - minVisual));
@@ -79,9 +61,9 @@ export function DonutChart({
     const arc = {
       ...segment,
       visual,
-      // Штрих короче капсулы на толщину — остаток дорисуют круглые концы.
+
       dash: Math.max(visual - thickness, 0.01),
-      // Штрих начинается на полтолщины позже, чтобы левая шапочка легла в позицию.
+
       offset: position + thickness / 2,
       fill: pastel(segment.color, index),
     };

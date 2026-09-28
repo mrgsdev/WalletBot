@@ -16,12 +16,6 @@ export interface ParsedInitData {
   raw: string;
 }
 
-/**
- * Проверяет подпись initData из Telegram WebApp.
- * Алгоритм: secret = HMAC_SHA256("WebAppData", botToken),
- * затем hash = HMAC_SHA256(secret, data_check_string).
- * Возвращает разобранные данные либо null, если подпись невалидна.
- */
 export function verifyInitData(
   initData: string,
   botToken: string,
@@ -41,14 +35,6 @@ export function verifyInitData(
 
   const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
 
-  /**
-   * Строка для проверки: все полученные поля, кроме hash, отсортированные по ключу.
-   *
-   * Поле signature появилось в Bot API 7.10 для отдельной проверки по Ed25519.
-   * Документация велит исключать только hash, но часть клиентов и библиотек
-   * трактует signature как служебное поле. Чтобы не отвергать валидных
-   * пользователей, пробуем оба варианта.
-   */
   const buildCheckString = (skipSignature: boolean) =>
     [...params.entries()]
       .filter(([key]) => key !== 'hash' && !(skipSignature && key === 'signature'))
@@ -96,7 +82,6 @@ export function displayName(user: TelegramInitUser): string {
   return name || user.username || `User ${user.id}`;
 }
 
-/** Код приглашения в семью: короткий, без похожих символов (0/O, 1/I). */
 export function generateInviteCode(length = 8): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const bytes = crypto.randomBytes(length);

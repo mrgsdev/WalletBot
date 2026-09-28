@@ -18,13 +18,6 @@ import { CategoryPickerSheet } from '../components/pickers';
 import { formatMoney } from '../lib/format';
 import { tg } from '../lib/telegram';
 
-/**
- * Напоминания.
- *
- * Два независимых механизма: ежедневное «внесите траты» и напоминания
- * о конкретных платежах. Второе настраивается здесь и никак не связано
- * с отметкой «повтор» на операции — та лишь помечает саму запись.
- */
 export function RemindersScreen() {
   const navigate = useNavigate();
   const { data: session } = useSession();
@@ -50,7 +43,6 @@ export function RemindersScreen() {
       </header>
 
       <div className="space-y-5 px-4">
-        {/* ---------- Ежедневное ---------- */}
         <section>
           <h2 className="mb-1.5 px-1 text-[13px] font-medium uppercase tracking-wide text-muted">
             Каждый день
@@ -62,7 +54,6 @@ export function RemindersScreen() {
           />
         </section>
 
-        {/* ---------- Регулярные платежи ---------- */}
         <section>
           <div className="mb-1.5 flex items-center justify-between px-1">
             <h2 className="text-[13px] font-medium uppercase tracking-wide text-muted">
@@ -141,7 +132,6 @@ function DailyReminder({
 
   useEffect(() => setLocalTime(time), [time]);
 
-  // Часовой пояс устройства, чтобы 21:00 означало ваши 21:00.
   const tzOffsetMinutes = -new Date().getTimezoneOffset();
 
   const save = (patch: {
@@ -220,7 +210,6 @@ function DailyReminder({
             ))}
           </div>
 
-          {/* Кому-то нужно напоминание как ритуал, даже если траты уже записаны. */}
           <button
             type="button"
             onClick={() => save({ dailyAlways: !always })}
@@ -316,7 +305,6 @@ function ReminderSheet({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [error, setError] = useState('');
 
-  // Заполняем форму при открытии.
   useEffect(() => {
     if (!item) return;
     setError('');

@@ -20,20 +20,12 @@ import { APP_NAME } from '../lib/appName';
 import { fontSizeForLength, formatMoney, formatMoneyFit, MONTHS_NOM } from '../lib/format';
 import { tg } from '../lib/telegram';
 
-/** Фильтры над списком операций — пилюли из референса. */
 const FILTERS: { value: TransactionType | null; label: string }[] = [
   { value: null, label: 'Все' },
   { value: 'expense', label: 'Расходы' },
   { value: 'income', label: 'Доходы' },
 ];
 
-/**
- * Главный экран.
- *
- * Композиция редизайна: белое полотно с балансом и счетами, тёмная полоса
- * быстрых действий и лист операций, «выезжающий» из-под неё. Тёмная полоса —
- * не только кнопки: она же зрительно разделяет две белые плоскости.
- */
 export function HomeScreen({
   onAdd,
   onEdit,
@@ -68,17 +60,11 @@ export function HomeScreen({
 
   return (
     <div className="min-h-[var(--tg-viewport-height)] bg-bar">
-      {/* ── Белое полотно: кто я, сколько у меня и где это лежит ── */}
       <div className="rounded-b-sheet bg-surface pb-5">
-        {/*
-          Кнопки статистики и профиля из шапки убраны: оба экрана есть
-          в нижней навигации, дублировать их сверху незачем.
-        */}
         <header className="flex items-center justify-center px-5 pb-1 pt-[calc(12px+var(--safe-top))]">
           <span className="text-[17px] font-bold tracking-tight">{APP_NAME}</span>
         </header>
 
-        {/* Баланс: подпись и пилюля бюджета в одну строку, под ними — сумма */}
         <TourTarget id="total-balance" className="px-5 pt-3">
           <div className="flex items-center justify-between gap-3">
             <span className="text-[14px] text-muted">Общий баланс</span>
@@ -94,7 +80,7 @@ export function HomeScreen({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               className="mt-1.5"
-              /* Кегль зависит от длины: 50 трлн иначе уезжают за край экрана. */
+
               style={{ fontSize: fontSizeForLength(formatMoney(total, baseCurrency, true), 42, 13, 22) }}
             >
               <Money value={total} currency={baseCurrency} alwaysCents className="amount-lead" />
@@ -105,7 +91,6 @@ export function HomeScreen({
             <CurrencyBreakdown accounts={accounts} base={baseCurrency} rates={rates} />
           )}
 
-          {/* Итоги месяца одной строкой — подробности на экране статистики. */}
           <TourTarget id="month-summary">
             <button
               type="button"
@@ -133,7 +118,6 @@ export function HomeScreen({
           </TourTarget>
         </TourTarget>
 
-        {/* Ряд плиток: бюджет месяца, счета, вход в кошелёк */}
         {accountsError ? (
           <ErrorState message="Не удалось получить счета" onRetry={() => refetch()} />
         ) : (
@@ -161,7 +145,6 @@ export function HomeScreen({
                     }}
                     className="pressable flex w-[156px] shrink-0 flex-col rounded-3xl bg-elevated p-3.5 text-left"
                   >
-                    {/* Ритм повторяет плитку бюджета: иконка, подпись, сумма. */}
                     <div className="flex w-full items-center justify-between">
                       <AccountIcon icon={account.icon} color={account.color} />
                       {account.isShared && <Users size={14} className="shrink-0 text-muted" />}
@@ -169,11 +152,6 @@ export function HomeScreen({
 
                     <div className="mt-2.5 truncate text-[12px] text-muted">{account.name}</div>
 
-                    {/*
-                      Плитка шириной 156px: сначала сокращаем запись, потом кегль.
-                      Уменьшать шрифт до нечитаемого ради всех разрядов хуже,
-                      чем показать «−₽100T» — точная сумма есть в кошельке.
-                    */}
                     {(() => {
                       const text = formatMoneyFit(account.balance, account.currency, 14);
                       return (
@@ -208,12 +186,10 @@ export function HomeScreen({
         )}
       </div>
 
-      {/* ── Тёмная полоса: три способа завести операцию ── */}
       <TourTarget id="add-button">
         <ActionBar onAdd={onAdd} />
       </TourTarget>
 
-      {/* ── Лист операций ── */}
       <TourTarget
         id="recent-transactions"
         className="min-h-[52vh] rounded-t-sheet bg-surface px-5 pb-36 pt-2.5"

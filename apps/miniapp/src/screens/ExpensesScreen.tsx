@@ -16,13 +16,11 @@ import { daysElapsed } from '../lib/structure';
 import { formatCompact, formatMoney, formatNumber, MONTHS_NOM } from '../lib/format';
 import { tg } from '../lib/telegram';
 
-/** Подробный разбор расходов за выбранный период. */
 export function ExpensesScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const now = new Date();
 
-  /* Режим наследуем от сводки, чтобы разбор открывался за тот же период. */
   const initialMode = (location.state as { mode?: 'month' | 'year' } | null)?.mode ?? 'month';
   const [mode, setMode] = useState<'month' | 'year'>(initialMode);
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -31,11 +29,6 @@ export function ExpensesScreen() {
 
   const accountId = useStatsAccount();
 
-  /*
-   * Середина месяца: так выбранный период не уедет из-за часового пояса.
-   * Для года берём декабрь — тренд строится назад от якоря, и только с
-   * декабря он укладывается ровно в январь-декабрь выбранного года.
-   */
   const anchor = useMemo(
     () => new Date(Date.UTC(year, mode === 'year' ? 11 : month - 1, 15)).toISOString(),
     [year, month, mode],
@@ -53,7 +46,6 @@ export function ExpensesScreen() {
   const total = data?.expense ?? 0;
   const perDay = days > 0 ? total / days : 0;
 
-  /* Сравнение с прошлым периодом: рост расходов это плохо, падение хорошо. */
   const previous = categories.data?.previousTotal ?? 0;
   const delta = total - previous;
 
@@ -123,7 +115,6 @@ export function ExpensesScreen() {
           />
         ) : (
           <>
-            {/* ---------- Кольцо по группам ---------- */}
             <section className="rounded-3xl bg-card p-4">
               <div className="flex justify-center pb-1 pt-2">
                 <DonutChart
@@ -173,7 +164,6 @@ export function ExpensesScreen() {
               </div>
             </section>
 
-            {/* ---------- Метрики ---------- */}
             <div className="grid grid-cols-2 gap-3">
               <Metric
                 title="Расход в день"
@@ -192,7 +182,6 @@ export function ExpensesScreen() {
               />
             </div>
 
-            {/* ---------- Расходы по месяцам ---------- */}
             {trend.length > 0 && (
               <section className="rounded-3xl bg-card p-4">
                 <div className="mb-3 text-[16px] font-semibold">Расходы по месяцам</div>
@@ -217,7 +206,6 @@ export function ExpensesScreen() {
               </section>
             )}
 
-            {/* ---------- Категории ---------- */}
             {items.length > 0 && (
               <section className="rounded-3xl bg-card p-4">
                 <div className="mb-1 text-[16px] font-semibold">По категориям</div>
@@ -281,7 +269,7 @@ function Metric({
   title: string;
   value: string;
   hint: string;
-  /** Цвет числа: рост расходов тревожный, падение хорошее. */
+
   tone?: 'plain' | 'good' | 'bad';
 }) {
   const color = tone === 'good' ? 'text-positive' : tone === 'bad' ? 'text-negative' : '';

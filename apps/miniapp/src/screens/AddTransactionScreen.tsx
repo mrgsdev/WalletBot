@@ -42,17 +42,12 @@ const TYPES: { value: TxType; label: string; Icon: typeof ArrowUpRight }[] = [
 interface Props {
   open: boolean;
   onClose: () => void;
-  /** Передаётся при редактировании существующей операции. */
+
   editing?: TransactionDto | null;
-  /** Тип, выбранный на полосе быстрых действий главного экрана. */
+
   initialType?: TxType;
 }
 
-/**
- * Полноэкранный модальный экран быстрого ввода операции.
- * Сумма набирается калькулятором: над итогом показывается выражение («75 + 50»),
- * под итогом — конвертация, если валюта операции отличается от валюты счёта.
- */
 export function AddTransactionScreen({ open, onClose, editing = null, initialType = 'expense' }: Props) {
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
   const [type, setType] = useState<TxType>(initialType);
@@ -78,14 +73,9 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
   const category = categories.find((c) => c.id === categoryId) ?? null;
 
   const { data: rates } = useRates(currency);
-  /*
-   * Считаем по законченной части выражения: «2,0 + 2,» — это ещё не
-   * законченная формула, но 4 в ней уже набраны, и показывать вместо них
-   * ноль неправильно.
-   */
+
   const amount = evaluatePartial(expression) ?? 0;
 
-  // Инициализация при открытии: либо редактируем операцию, либо начинаем с чистого листа.
   useEffect(() => {
     if (!open) return;
     setError(null);
@@ -112,7 +102,6 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
     setIsRecurring(false);
   }, [open, editing, initialType]);
 
-  // Первый счёт выбирается автоматически, валюта подтягивается из него.
   useEffect(() => {
     if (!open || accounts.length === 0) return;
     if (accountId === null) {
@@ -121,7 +110,6 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
     }
   }, [open, accounts, accountId, editing]);
 
-  // Категория по умолчанию — первая подходящая по типу операции.
   useEffect(() => {
     if (type === 'transfer' || categories.length === 0) return;
     if (categoryId === null || !categories.some((c) => c.id === categoryId)) {
@@ -134,17 +122,13 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
     return tg.pushBackHandler(onClose);
   }, [open, onClose]);
 
-  // Закрытый экран не должен оставлять за собой открытые листы.
   useEffect(() => {
     if (!open) setPicker(null);
   }, [open]);
 
-  // Сообщаем обучению о ключевых действиях пользователя.
   useEffect(() => {
     emitTourEvent(open ? 'add-opened' : 'add-closed');
   }, [open]);
-
-
 
   const converted = useMemo(() => {
     if (!account || account.currency === currency || !rates) return null;
@@ -157,7 +141,7 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
     tg.haptic.light();
     setExpression((prev) => {
       const next = pushToken(prev, token);
-      // Обучение ждёт именно ввода пользователя, а не остаточного значения.
+
       if (next && next !== prev) emitTourEvent('amount-entered');
       return next;
     });
@@ -223,12 +207,6 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
   const displayAmount = formatEntry(expression, amount);
 
   return (
-    /*
-     * Селекторы вынесены за AnimatePresence экрана.
-     * Раньше они жили внутри уходящего поддерева: при закрытии экрана
-     * анимация «замораживала» его вместе с открытым листом, и лист
-     * оставался висеть поверх приложения — например, после удаления операции.
-     */
     <>
       <AnimatePresence>
       {open && (
@@ -240,7 +218,6 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
           transition={{ type: 'spring', stiffness: 300, damping: 32 }}
           style={{ height: 'var(--tg-viewport-height)' }}
         >
-          {/* ---------- Шапка: закрыть / тип операции / доп. меню ---------- */}
           <div className="flex items-center justify-between gap-2 px-4 pb-3 pt-[calc(12px+var(--safe-top))]">
             <button
               type="button"
@@ -296,9 +273,7 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
             </button>
           </div>
 
-          {/* ---------- Основная карточка ---------- */}
           <div className="mx-3 flex min-h-0 flex-1 flex-col rounded-4xl bg-card/70 p-3">
-            {/* Счёт и валюта */}
             <div className="flex items-start justify-between gap-2">
               {accountsLoading ? (
                 <Skeleton className="h-12 w-40 rounded-full" />
@@ -318,7 +293,6 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
                     className="h-9 w-9"
                     emojiClassName="text-[16px]"
                   />
-                  {/* min-w-0 + truncate: длинное имя счёта иначе распирает чип. */}
                   <span className="min-w-0 text-left">
                     <span className="block truncate text-[14px] font-semibold leading-tight">
                       {account?.name ?? 'Счёт'}
@@ -344,7 +318,6 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
               </button>
             </div>
 
-            {/* Сумма */}
             <div className="flex flex-1 flex-col items-center justify-center gap-2 py-4">
               <AnimatePresence>
                 {hasOperator(expression) && (
@@ -361,10 +334,7 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
 
               <div
                 className="tabular flex items-baseline justify-center"
-                /*
-                 * Даже разрешённый максимум «999 999 999,99» не влезает
-                 * на табло в 56px, поэтому кегль зависит от длины.
-                 */
+
                 style={{ fontSize: fontSizeForLength(displayAmount, 56, 10, 30) }}
               >
                 <span className="font-semibold leading-none text-muted" style={{ fontSize: '0.78em' }}>
@@ -437,7 +407,6 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
               )}
             </div>
 
-            {/* Дата / повтор / вложение */}
             <div className="flex items-center justify-between px-1 pb-3">
               <div className="flex items-center gap-2">
                 <label className="pressable relative flex items-center gap-2 rounded-full bg-elevated/80 px-3.5 py-2.5 text-[14px] font-medium">
@@ -451,7 +420,7 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
                       const next = e.target.valueAsDate ?? new Date(e.target.value);
                       if (!Number.isNaN(next.getTime())) {
                         tg.haptic.select();
-                        // valueAsDate уже полночь UTC, но страхуемся от запасной ветки.
+
                         setDate(calendarDay(next));
                       }
                   }}
@@ -478,13 +447,11 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
 
             </div>
 
-            {/* Клавиатура */}
             <TourTarget id="walk-keypad">
               <Keypad onDigit={press} onBackspace={backspace} onClear={clearAll} />
             </TourTarget>
           </div>
 
-          {/* ---------- Нижняя панель: категория и сохранение ---------- */}
           <div className="flex items-center gap-3 px-4 pb-[calc(12px+var(--safe-bottom))] pt-3">
             {type === 'transfer' ? (
               <div className="flex-1 text-[14px] text-muted">Перевод между счетами</div>
@@ -498,7 +465,6 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
                 }}
                 className="pressable flex w-full min-w-0 items-center gap-2.5 rounded-full bg-card py-2 pl-2 pr-4"
               >
-                {/* У картинки свой цвет — заливку кружка оставляем только эмодзи. */}
                 <span
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
                   style={{
@@ -551,7 +517,6 @@ export function AddTransactionScreen({ open, onClose, editing = null, initialTyp
       )}
       </AnimatePresence>
 
-          {/* ---------- Селекторы ---------- */}
       <AccountPickerSheet
         open={picker === 'account'}
         onClose={() => setPicker(null)}
@@ -607,7 +572,6 @@ const KEYS = [
   [',', '0', 'backspace', '+'],
 ];
 
-/** Калькуляторная клавиатура: цифры, запятая, ⌫ и четыре операции. */
 function Keypad({
   onDigit,
   onBackspace,
@@ -671,7 +635,6 @@ function ExtraSheet({
         />
       </label>
 
-
       {onDelete && (
         <button
           type="button"
@@ -689,14 +652,6 @@ function flagOf(code: string): string {
   return CURRENCY_BY_CODE[code]?.flag ?? '🏳️';
 }
 
-/**
- * Сумма на экране ввода.
- *
- * Пока набирается дробная часть, показываем её так, как её печатают:
- * иначе запятая и нули после неё теряются при форматировании — человек
- * жмёт «,» и видит прежнее число, будто кнопка не сработала.
- * Как только в выражении появляется оператор, показываем результат.
- */
 function formatEntry(expression: string, amount: number): string {
   if (expression === '') return '0';
   if (hasOperator(expression)) return formatNumber(amount);

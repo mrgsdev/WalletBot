@@ -15,7 +15,6 @@ import { parseDate, parseDayEnd } from '../lib/dates.js';
 
 export const transactionsRouter = Router();
 
-/** Экранирует подстановочные знаки LIKE: «50%» иначе матчит что угодно. */
 function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (char) => `\\${char}`);
 }
@@ -53,8 +52,6 @@ transactionsRouter.get(
       if (q.to) where.date.lte = parseDayEnd(q.to);
     }
     if (typeof q.search === 'string' && q.search.trim()) {
-      // insensitive: без него PostgreSQL ищет с учётом регистра,
-      // и «подписки» не находили операцию с комментарием «Подписки».
       where.comment = { contains: escapeLike(q.search.trim()), mode: 'insensitive' };
     }
 
@@ -83,7 +80,7 @@ const inputSchema = z.object({
   categoryId: z.number().int().positive().nullable().optional(),
   amount: z.number().positive().max(MAX_AMOUNT),
   currency: z.string().length(3),
-  // Без проверки формата «вчера» доезжало до Prisma и падало пятисоткой.
+
   date: z.string().refine((value) => !Number.isNaN(new Date(value).getTime()), 'Некорректная дата'),
   comment: z.string().max(500).nullable().optional(),
   receiptPhotoUrl: z.string().max(500).nullable().optional(),

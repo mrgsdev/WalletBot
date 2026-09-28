@@ -3,13 +3,11 @@ import type { MotionValue } from 'framer-motion';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { tg } from '../lib/telegram';
 
-/** Высота строки барабана и сколько строк видно одновременно. */
 const ITEM = 44;
 const VISIBLE = 5;
 const PAD = ((VISIBLE - 1) / 2) * ITEM;
 const SPRING = { type: 'spring' as const, stiffness: 400, damping: 40 };
 
-/** Верх и низ барабана растворяются — как в нативном пикере. */
 const FADE = 'linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent)';
 
 export interface WheelOption<T extends string | number> {
@@ -17,10 +15,6 @@ export interface WheelOption<T extends string | number> {
   label: string;
 }
 
-/**
- * Рамка барабана: подсветка выбранной строки и растворяющиеся края.
- * Колонки складываем внутрь, чтобы у месяца и года была общая подсветка.
- */
 export function WheelGroup({ children }: { children: ReactNode }) {
   return (
     <div className="relative select-none" style={{ height: VISIBLE * ITEM }}>
@@ -35,13 +29,6 @@ export function WheelGroup({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * Колонка барабана.
- *
- * Крутим перетаскиванием, а не обычной прокруткой: барабан живёт внутри
- * листа, и обычный скролл в нём конфликтовал бы с жестом закрытия листа.
- * Поэтому лист с барабаном открываем с `dragToClose={false}`.
- */
 export function Wheel<T extends string | number>({
   options,
   value,
@@ -60,14 +47,13 @@ export function Wheel<T extends string | number>({
   const target = -index * ITEM;
 
   const y = useMotionValue(target);
-  /* Куда барабан едет сейчас: чтобы не переигрывать собственную же доводку. */
+
   const aiming = useRef(target);
   const shown = useRef(index);
 
   const clamp = (i: number) => Math.min(Math.max(i, 0), options.length - 1);
   const indexAt = (offset: number) => clamp(Math.round(-offset / ITEM));
 
-  /* Значение поменяли снаружи — доводим барабан до нужной строки. */
   useEffect(() => {
     if (aiming.current === target) return;
     aiming.current = target;
@@ -75,7 +61,6 @@ export function Wheel<T extends string | number>({
     return () => controls.stop();
   }, [target, y]);
 
-  /* Тик отдачей на каждой новой строке — как у нативного пикера. */
   useMotionValueEvent(y, 'change', (offset) => {
     const next = indexAt(offset);
     if (next === shown.current) return;
@@ -130,7 +115,6 @@ function WheelItem({
   const opacity = useTransform(distance, [0, 1, 2], [1, 0.45, 0.18]);
   const scale = useTransform(distance, [0, 2], [1, 0.84]);
 
-  /* Тап выбирает строку, но только если это был тап, а не протяжка. */
   const pressed = useRef<number | null>(null);
 
   return (

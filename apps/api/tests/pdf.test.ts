@@ -13,7 +13,6 @@ let scope: Scope;
 let cardId: number;
 let cashId: number;
 
-/** Курсы фиксируем в базе, чтобы тесты не ходили во внешний API. */
 async function seedRates() {
   for (const [quote, rate] of Object.entries({ USD: 1, EUR: 0.9, RUB: 90 })) {
     await prisma.exchangeRate.upsert({
@@ -59,7 +58,6 @@ beforeEach(async () => {
   cashId = budget.accounts[1].id;
 });
 
-/** Месяц с операциями — чтобы отчёт не оказался пустым. */
 async function seedMonth() {
   const expense = await prisma.category.findFirst({
     where: { budgetId: scope.budgetId, type: 'expense' },
@@ -98,7 +96,6 @@ const RANGE = { year: 2026, fromMonth: 3, toMonth: 3 };
 
 describe('pdfText', () => {
   it('убирает символы, которых нет в шрифте отчёта', () => {
-    // Roboto из pdfmake не содержит эмодзи — pdfkit нарисовал бы пустые квадраты.
     expect(pdfText('🍕 Пицца')).toBe('Пицца');
     expect(pdfText('Карта → Наличные')).toBe('Карта Наличные');
   });

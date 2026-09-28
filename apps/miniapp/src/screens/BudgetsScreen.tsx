@@ -14,17 +14,12 @@ import { useBudgetMutations, useSession } from '../lib/queries';
 import { useAppStore } from '../store/app';
 import { tg } from '../lib/telegram';
 
-/** Экран бюджетов: создание, приглашения, участники и удаление. */
 export function BudgetsScreen() {
   const navigate = useNavigate();
   const { data: session, isLoading } = useSession();
   const [creating, setCreating] = useState<'personal' | 'family' | null>(null);
   const [joining, setJoining] = useState(false);
-  /*
-   * Храним id, а не сам бюджет: объект в состоянии остался бы снимком на момент
-   * открытия, и обновление кода приглашения (как и смена иконки) не отражалось бы
-   * в уже открытом окне. По id всегда берём свежую версию из сессии.
-   */
+
   const [detailsId, setDetailsId] = useState<number | null>(null);
 
   const budgets = session?.budgets ?? [];
@@ -149,7 +144,7 @@ function ActionRow({
   label: string;
   hint: string;
   onClick: () => void;
-  /** Иконка сама себе картинка — рисуем без кружка-подложки. */
+
   iconBare?: boolean;
 }) {
   return (
@@ -285,7 +280,7 @@ function JoinSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 
 function DetailsSheet({ budget, onClose }: { budget: BudgetDto | null; onClose: () => void }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
-  /** Участник, которого собираются исключить: подтверждаем перед удалением. */
+
   const [confirmMember, setConfirmMember] = useState<{ userId: number; name: string } | null>(null);
   const { remove, leave, removeMember, rotateInvite, share, update } = useBudgetMutations();
   const { data: session } = useSession();
@@ -317,7 +312,6 @@ function DetailsSheet({ budget, onClose }: { budget: BudgetDto | null; onClose: 
             />
           </div>
         )}
-        {/* Приглашение — только у семейных бюджетов */}
         {budget.kind === 'family' && budget.inviteLink && (
           <div className="rounded-2xl bg-elevated/50 p-4">
             <div className="text-[13px] text-muted">Код приглашения</div>
@@ -355,7 +349,6 @@ function DetailsSheet({ budget, onClose }: { budget: BudgetDto | null; onClose: 
           </div>
         )}
 
-        {/* Личный бюджет можно открыть для близких */}
         {budget.kind === 'personal' && budget.isOwner && (
           <button
             type="button"
@@ -375,7 +368,6 @@ function DetailsSheet({ budget, onClose }: { budget: BudgetDto | null; onClose: 
           </button>
         )}
 
-        {/* Участники */}
         {budget.kind === 'family' && (
           <div>
             <div className="mb-1.5 px-1 text-[13px] font-medium uppercase tracking-wide text-muted">
@@ -457,7 +449,6 @@ function DetailsSheet({ budget, onClose }: { budget: BudgetDto | null; onClose: 
           </div>
         )}
 
-        {/* Опасная зона */}
         <div className="space-y-2 pt-1">
           {!budget.isOwner && budget.kind === 'family' && (
             <button
@@ -544,7 +535,6 @@ function pluralAccounts(count: number): string {
   return 'счетов';
 }
 
-/** Сетка выбора иконки бюджета. Используется и при создании, и при правке. */
 function IconGrid({ value, onChange }: { value: string; onChange: (icon: string) => void }) {
   return (
     <div className="grid grid-cols-6 gap-2">

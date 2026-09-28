@@ -40,7 +40,6 @@ describe('makeConverter', () => {
   });
 
   it('не подменяет неизвестную валюту курсом один к одному', () => {
-    // Раньше сумма возвращалась как есть, и баты складывались с рублями.
     expect(() => toRub(50, 'XYZ')).toThrow(/Нет курса для валюты/);
   });
 
@@ -261,14 +260,13 @@ describe('сравнение с предыдущим периодом', () => {
   });
 
   it('исчезнувшая категория не попадает в результат', () => {
-    // Тратили в прошлом месяце, в этом — нет: показывать нечего.
     const { items } = aggregateByCategory([], toRub, [row({ categoryId: 5, amount: 700 })]);
     expect(items).toEqual([]);
   });
 
   it('сравнение приводит валюты к базовой', () => {
     const now = [row({ amount: 1800 })];
-    const before = [row({ amount: 10, accountCurrency: 'EUR' })]; // 10 EUR = 1000 RUB
+    const before = [row({ amount: 10, accountCurrency: 'EUR' })];
     const { items } = aggregateByCategory(now, toRub, before);
     expect(items[0].previousAmount).toBe(1000);
     expect(items[0].changePercent).toBe(80);

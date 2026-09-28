@@ -9,8 +9,6 @@ Type=simple
 User=budget
 Group=budget
 WorkingDirectory=/opt/budget/apps/api
-# Переменные читает сам процесс из /opt/budget/.env (dotenv поднимается по дереву),
-# поэтому EnvironmentFile не нужен — и кавычки в DATABASE_URL не ломаются.
 ExecStart=/usr/bin/node dist/index.js
 Restart=always
 RestartSec=5
@@ -18,7 +16,6 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=budget-api
 
-# Ограничиваем права: приложению нужен только каталог с данными.
 NoNewPrivileges=true
 PrivateTmp=true
 PrivateDevices=true

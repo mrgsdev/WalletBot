@@ -1,6 +1,5 @@
 import { prisma } from '../lib/prisma.js';
 
-/** Локальное время пользователя в формате «ЧЧ:ММ». */
 export function localTimeString(now: Date, tzOffsetMinutes: number): string {
   const local = new Date(now.getTime() + tzOffsetMinutes * 60_000);
   const hh = String(local.getUTCHours()).padStart(2, '0');
@@ -8,14 +7,12 @@ export function localTimeString(now: Date, tzOffsetMinutes: number): string {
   return `${hh}:${mm}`;
 }
 
-/** Начало локальных суток пользователя, выраженное в UTC. */
 export function localDayStart(now: Date, tzOffsetMinutes: number): Date {
   const local = new Date(now.getTime() + tzOffsetMinutes * 60_000);
   const startLocal = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate());
   return new Date(startLocal - tzOffsetMinutes * 60_000);
 }
 
-/** Совпадает ли текущая минута с временем напоминания (с допуском). */
 export function isTimeToNotify(
   now: Date,
   tzOffsetMinutes: number,
@@ -30,11 +27,10 @@ export function isTimeToNotify(
   const targetMinutes = th * 60 + tm;
 
   const diff = nowMinutes - targetMinutes;
-  // Окно только вперёд: напоминание не должно срабатывать раньше времени.
+
   return diff >= 0 && diff < toleranceMinutes;
 }
 
-/** Регулярные платежи, по которым пора напомнить владельцу. */
 export async function dueRecurring(now: Date) {
   const items = await prisma.recurringPayment.findMany({
     where: { isActive: true },
@@ -53,7 +49,6 @@ export async function dueRecurring(now: Date) {
     if (local.getUTCDate() !== item.dayOfMonth) return false;
     if (!isTimeToNotify(now, tz, item.notifyTime)) return false;
 
-    // Не напоминаем дважды в один локальный день.
     if (item.lastNotifiedAt) {
       const sentLocal = new Date(item.lastNotifiedAt.getTime() + tz * 60_000);
       if (
@@ -81,7 +76,6 @@ export async function dueRecurring(now: Date) {
   }));
 }
 
-/** Совпадают ли две даты по локальному календарю пользователя. */
 function sameLocalDay(a: Date, b: Date, tzOffsetMinutes: number): boolean {
   const la = new Date(a.getTime() + tzOffsetMinutes * 60_000);
   const lb = new Date(b.getTime() + tzOffsetMinutes * 60_000);
@@ -92,13 +86,6 @@ function sameLocalDay(a: Date, b: Date, tzOffsetMinutes: number): boolean {
   );
 }
 
-/**
- * Пользователи, у которых включено дневное напоминание, наступило выбранное
- * ими время и за сегодня не внесено ни одной операции.
- *
- * Окно срабатывания — несколько минут, а бот опрашивает раз в минуту, поэтому
- * без отметки об отправке человек получал бы одно и то же сообщение подряд.
- */
 export async function usersToRemind(now: Date) {
   const candidates = await prisma.userSettings.findMany({
     where: { dailyReminder: true },
@@ -110,7 +97,6 @@ export async function usersToRemind(now: Date) {
   for (const settings of candidates) {
     if (!isTimeToNotify(now, settings.tzOffsetMinutes, settings.dailyReminderTime)) continue;
 
-    // Сегодня уже напоминали — второй раз не тревожим.
     if (
       settings.dailyLastSentAt &&
       sameLocalDay(settings.dailyLastSentAt, now, settings.tzOffsetMinutes)
@@ -118,8 +104,6 @@ export async function usersToRemind(now: Date) {
       continue;
     }
 
-    // По умолчанию напоминание нужно только тем, кто сегодня ничего не записал.
-    // Тем, кто выбрал «напоминать всегда», шлём независимо от операций.
     let needed = true;
     if (!settings.dailyAlways) {
       const since = localDayStart(now, settings.tzOffsetMinutes);
@@ -141,7 +125,6 @@ export async function usersToRemind(now: Date) {
   return result;
 }
 
-/** Отметка, что дневное напоминание отправлено. */
 export async function markDailySent(userId: number, at = new Date()) {
   await prisma.userSettings.update({
     where: { userId },

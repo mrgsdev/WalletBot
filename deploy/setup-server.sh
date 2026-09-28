@@ -1,12 +1,4 @@
 #!/usr/bin/env bash
-#
-# Первичная настройка сервера под Debian 12/13.
-# Запускается один раз на свежей машине от root:
-#
-#   scp deploy/setup-server.sh root@СЕРВЕР:/tmp/
-#   ssh root@СЕРВЕР 'bash /tmp/setup-server.sh budget.example.com you@example.com'
-#
-# Скрипт идемпотентный: повторный запуск ничего не сломает.
 
 set -euo pipefail
 
@@ -37,8 +29,6 @@ apt-get upgrade -y -qq
 log "Ставлю базовые пакеты"
 apt-get install -y -qq curl ca-certificates gnupg rsync ufw sqlite3
 
-# ---------- Swap ----------
-# На 1 Gb памяти swap нужен как страховка на время npm ci и пиков нагрузки.
 if ! swapon --show | grep -q .; then
   log "Создаю swap-файл на 2 Gb"
   fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048
@@ -46,14 +36,12 @@ if ! swapon --show | grep -q .; then
   mkswap /swapfile >/dev/null
   swapon /swapfile
   grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
-  # Свопить только при реальной нехватке — на SSD это дешевле, чем OOM.
   sysctl -w vm.swappiness=10 >/dev/null
   grep -q '^vm.swappiness' /etc/sysctl.conf || echo 'vm.swappiness=10' >> /etc/sysctl.conf
 else
   log "Swap уже настроен, пропускаю"
 fi
 
-# ---------- Node.js ----------
 if ! command -v node >/dev/null || [[ "$(node -v | cut -d. -f1 | tr -d v)" -lt 20 ]]; then
   log "Ставлю Node.js ${NODE_MAJOR} LTS"
   mkdir -p /etc/apt/keyrings
@@ -66,11 +54,9 @@ if ! command -v node >/dev/null || [[ "$(node -v | cut -d. -f1 | tr -d v)" -lt 2
 fi
 log "Node $(node -v), npm $(npm -v)"
 
-# ---------- nginx и certbot ----------
 log "Ставлю nginx и certbot"
 apt-get install -y -qq nginx certbot python3-certbot-nginx
 
-# ---------- Пользователь и каталоги ----------
 if ! id budget >/dev/null 2>&1; then
   log "Создаю системного пользователя budget"
   useradd --system --create-home --home-dir /home/budget --shell /usr/sbin/nologin budget
@@ -81,7 +67,6 @@ mkdir -p "$APP_DIR" "$DATA_DIR/uploads"
 chown -R budget:budget "$APP_DIR" "$DATA_DIR"
 chmod 750 "$DATA_DIR"
 
-# ---------- nginx site ----------
 log "Настраиваю nginx для домена $DOMAIN"
 if [[ -f /tmp/nginx.conf ]]; then
   sed "s/DOMAIN/$DOMAIN/g" /tmp/nginx.conf > /etc/nginx/sites-available/budget
@@ -93,7 +78,6 @@ fi
 ln -sf /etc/nginx/sites-available/budget /etc/nginx/sites-enabled/budget
 rm -f /etc/nginx/sites-enabled/default
 
-# Пока приложение не выложено, отдаём заглушку, чтобы nginx стартовал.
 mkdir -p "$APP_DIR/apps/miniapp/dist"
 [[ -f "$APP_DIR/apps/miniapp/dist/index.html" ]] || \
   echo '<!doctype html><meta charset="utf-8"><title>Бюджет</title><p>Приложение ещё не выложено.' \
@@ -103,7 +87,6 @@ chown -R budget:budget "$APP_DIR"
 nginx -t
 systemctl reload nginx
 
-# ---------- systemd ----------
 log "Ставлю systemd-юниты"
 for unit in budget-api budget-bot; do
   if [[ -f "/tmp/${unit}.service" ]]; then
@@ -116,16 +99,12 @@ done
 systemctl daemon-reload
 systemctl enable budget-api budget-bot >/dev/null
 
-# ---------- Файрвол ----------
 log "Настраиваю ufw"
 ufw allow OpenSSH >/dev/null
 ufw allow 'Nginx Full' >/dev/null
 ufw --force enable >/dev/null
 
-# ---------- HTTPS ----------
 log "Получаю сертификат Let's Encrypt"
-# Без email сертификат тоже выпускается: автопродление делает systemd-таймер certbot,
-# email нужен только для писем о скором истечении.
 if [[ -n "$EMAIL" ]]; then
   CERTBOT_EMAIL_ARG=(-m "$EMAIL")
 else

@@ -8,12 +8,6 @@ interface State {
   error: Error | null;
 }
 
-/**
- * Ловит ошибки рендера.
- *
- * Без неё любое исключение внутри дерева оставляло пустой чёрный экран
- * без единой подсказки — именно так выглядел «интерфейс пропал».
- */
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null };
 

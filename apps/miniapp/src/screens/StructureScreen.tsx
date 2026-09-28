@@ -14,13 +14,11 @@ import { daysElapsed, periodStructure, STRUCTURE_COLORS } from '../lib/structure
 import { formatMoney, formatNumber, MONTHS_NOM } from '../lib/format';
 import { tg } from '../lib/telegram';
 
-/** Подробный разбор одного месяца: куда разошёлся доход. */
 export function StructureScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const now = new Date();
 
-  /* Режим наследуем от сводки, чтобы разбор открывался за тот же период. */
   const initialMode = (location.state as { mode?: 'month' | 'year' } | null)?.mode ?? 'month';
   const [mode, setMode] = useState<'month' | 'year'>(initialMode);
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -29,11 +27,6 @@ export function StructureScreen() {
 
   const accountId = useStatsAccount();
 
-  /*
-   * Середина месяца: так выбранный период не уедет из-за часового пояса.
-   * Для года берём декабрь — тренд строится назад от якоря, и только с
-   * декабря он укладывается ровно в январь-декабрь выбранного года.
-   */
   const anchor = useMemo(
     () => new Date(Date.UTC(year, mode === 'year' ? 11 : month - 1, 15)).toISOString(),
     [year, month, mode],
@@ -44,7 +37,6 @@ export function StructureScreen() {
   const days = daysElapsed(mode, year, month, now);
   const perDay = days > 0 ? structure.expense / days : 0;
 
-  /* Накопления по месяцам: доход минус расход в каждой точке тренда. */
   const savingsTrend = useMemo(() => {
     if (!data) return [];
     const expenseByMonth = new Map(data.expenseTrend.map((p) => [p.month, p.value]));
@@ -114,7 +106,6 @@ export function StructureScreen() {
           />
         ) : (
           <>
-            {/* ---------- Кольцо и суммы ---------- */}
             <section className="rounded-3xl bg-card p-4">
               <div className="flex justify-center pb-1 pt-2">
                 <DonutChart
@@ -167,7 +158,6 @@ export function StructureScreen() {
               )}
             </section>
 
-            {/* ---------- Метрики ---------- */}
             <div className="grid grid-cols-2 gap-3">
               <Metric
                 title="Норма сбережений"
@@ -181,7 +171,6 @@ export function StructureScreen() {
               />
             </div>
 
-            {/* ---------- Накопления по месяцам ---------- */}
             {savingsTrend.length > 0 && (
               <section className="rounded-3xl bg-card p-4">
                 <div className="mb-3 text-[16px] font-semibold">Накопления по месяцам</div>
@@ -211,7 +200,6 @@ export function StructureScreen() {
               </section>
             )}
 
-            {/* ---------- Расходы по группам ---------- */}
             {data.expenseGroups.length > 0 && (
               <section className="rounded-3xl bg-card p-4">
                 <div className="mb-3 text-[16px] font-semibold">Куда ушли расходы</div>

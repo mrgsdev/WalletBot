@@ -35,7 +35,6 @@ import { MONTHS_NOM } from '../lib/format';
 import { tg } from '../lib/telegram';
 import { APP_NAME } from '../lib/appName';
 
-/** Настройки: тема, валюта отчётов, напоминания, экспорт и справочники. */
 export function MoreScreen() {
   const navigate = useNavigate();
   const { data: session, isLoading } = useSession();
@@ -57,7 +56,6 @@ export function MoreScreen() {
         </div>
       ) : (
         <div className="space-y-5 px-4">
-          {/* Профиль */}
           <div className="flex items-center gap-3 rounded-3xl bg-card p-4">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-elevated text-[18px] font-semibold">
               {session.user.avatarUrl ? (
@@ -164,7 +162,7 @@ function ThemeSheet({ open, onClose, current }: { open: boolean; onClose: () => 
 
   const choose = (theme: ThemeMode) => {
     tg.haptic.select();
-    // Применяем сразу, не дожидаясь ответа сервера.
+
     setTheme(theme);
     update.mutate({ theme });
   };
@@ -346,12 +344,6 @@ function ExportSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
   );
 }
 
-/**
- * Демо-данные: вернуть для примера или убрать.
- *
- * Собственные записи ни та, ни другая кнопка не трогают — под удаление
- * попадают только операции, помеченные как демонстрационные.
- */
 function DemoRows() {
   const { data: status } = useDemoStatus();
   const demo = useDemo();
@@ -412,13 +404,7 @@ function DemoRows() {
             type="button"
             onClick={() => {
               tg.haptic.light();
-              /*
-               * Лист закрываем сразу, не дожидаясь ответа: мутация
-               * считается завершённой только после обновления всех
-               * связанных запросов, и «Удаляю…» висело бы несколько
-               * секунд уже после того, как данные исчезли. Прогресс
-               * видно в подсказке самой строки.
-               */
+
               setConfirmClear(false);
               demo.clear.mutate(undefined, {
                 onSuccess: () => tg.haptic.success(),
@@ -451,7 +437,6 @@ function pluralOperations(count: number): string {
   return 'операций';
 }
 
-/** Запускает пошаговое обучение заново с первого шага. */
 function ReplayTourRow() {
   const tour = useTour();
   return (
@@ -486,7 +471,7 @@ function Row({
   hint?: string;
   onClick?: () => void;
   renderRight?: React.ReactNode;
-  /** Иконка сама себе картинка — рисуем без кружка-подложки. */
+
   iconBare?: boolean;
 }) {
   return (
@@ -523,7 +508,6 @@ function pluralBudgets(count: number): string {
   return 'бюджетов';
 }
 
-/** Объёмная иконка строки меню — в габарите прежнего кружка. */
 function MenuIcon({ src }: { src: string }) {
   return <img src={src} alt="" className="h-9 w-9 object-contain" />;
 }

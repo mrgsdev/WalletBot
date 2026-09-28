@@ -5,7 +5,6 @@ import { badRequest, forbidden, notFound } from '../lib/errors.js';
 
 type Client = Pick<typeof prisma, 'budget' | 'category' | 'account' | 'budgetMember'>;
 
-/** Наполняет новый бюджет категориями по умолчанию. */
 async function seedCategories(budgetId: number, tx: Client) {
   await tx.category.createMany({
     data: DEFAULT_CATEGORIES.map((c, index) => ({
@@ -25,11 +24,10 @@ export interface CreateBudgetInput {
   kind: 'personal' | 'family';
   icon?: string;
   currency?: string;
-  /** Заводить ли пару счетов по умолчанию (нужно только при регистрации). */
+
   withDefaultAccounts?: boolean;
 }
 
-/** Создаёт бюджет, делает автора участником и наполняет категориями. */
 export async function createBudget(userId: number, input: CreateBudgetInput) {
   const name = input.name.trim();
   if (!name) throw badRequest('Укажите название бюджета');
@@ -42,7 +40,7 @@ export async function createBudget(userId: number, input: CreateBudgetInput) {
         name,
         kind: input.kind,
         icon: input.icon ?? (input.kind === 'family' ? '👨‍👩‍👧' : '👛'),
-        // Код приглашения нужен только семейным бюджетам.
+
         inviteCode: input.kind === 'family' ? generateInviteCode() : null,
         limitCurrency: currency,
         createdById: userId,
@@ -77,7 +75,6 @@ export function loadBudget(budgetId: number) {
   });
 }
 
-/** Все бюджеты пользователя. */
 export async function listBudgets(userId: number) {
   const memberships = await prisma.budgetMember.findMany({
     where: { userId },
@@ -94,13 +91,12 @@ export async function listBudgets(userId: number) {
   return memberships.map((m) => m.budget);
 }
 
-/** Присоединение по коду приглашения. Работает только для семейных бюджетов. */
 export async function joinByCode(userId: number, rawCode: string) {
   const code = rawCode.trim().toUpperCase();
   if (!code) throw badRequest('Пустой код приглашения');
 
   const budget = await prisma.budget.findUnique({ where: { inviteCode: code } });
-  // Бюджет удалён вместе с кодом — ссылка больше не действует.
+
   if (!budget) throw notFound('Приглашение не найдено или больше не действует');
   if (budget.kind !== 'family') throw badRequest('В личный бюджет нельзя пригласить');
 
@@ -113,13 +109,6 @@ export async function joinByCode(userId: number, rawCode: string) {
   return loadBudget(budget.id);
 }
 
-/**
- * Выход из бюджета.
- *
- * Счета и операции остаются на месте. Личные счета ушедшего перестают
- * быть видны кому-либо (общими они не были, а сам он больше не участник),
- * но и не удаляются: если его пригласят обратно, история вернётся целиком.
- */
 export async function leaveBudget(userId: number, budgetId: number) {
   const budget = await prisma.budget.findUnique({ where: { id: budgetId } });
   if (!budget) throw notFound('Бюджет не найден');
@@ -135,10 +124,6 @@ export async function leaveBudget(userId: number, budgetId: number) {
   await prisma.budgetMember.delete({ where: { budgetId_userId: { budgetId, userId } } });
 }
 
-/**
- * Исключение участника. Доступно только создателю бюджета.
- * Операции исключённого остаются в истории — иначе у остальных «поедут» балансы.
- */
 export async function removeMember(actorId: number, budgetId: number, targetUserId: number) {
   const budget = await prisma.budget.findUnique({ where: { id: budgetId } });
   if (!budget) throw notFound('Бюджет не найден');
@@ -155,10 +140,6 @@ export async function removeMember(actorId: number, budgetId: number, targetUser
   });
 }
 
-/**
- * Полное удаление бюджета вместе со счетами, операциями и категориями.
- * Код приглашения исчезает, поэтому старая ссылка перестаёт работать.
- */
 export async function deleteBudget(userId: number, budgetId: number) {
   const budget = await prisma.budget.findUnique({ where: { id: budgetId } });
   if (!budget) throw notFound('Бюджет не найден');
@@ -167,11 +148,9 @@ export async function deleteBudget(userId: number, budgetId: number) {
   const remaining = await prisma.budgetMember.count({ where: { userId } });
   if (remaining <= 1) throw badRequest('Нельзя удалить единственный бюджет');
 
-  // Каскады в схеме сносят счета, операции, категории, планы и напоминания.
   await prisma.budget.delete({ where: { id: budgetId } });
 }
 
-/** Перевыпуск кода приглашения — старая ссылка перестаёт работать. */
 export async function rotateInvite(userId: number, budgetId: number) {
   const budget = await prisma.budget.findUnique({ where: { id: budgetId } });
   if (!budget) throw notFound('Бюджет не найден');
@@ -185,7 +164,6 @@ export async function rotateInvite(userId: number, budgetId: number) {
   return loadBudget(budgetId);
 }
 
-/** Ссылка-приглашение вида https://t.me/bot?start=join_CODE. */
 export function inviteLink(botUsername: string, code: string): string {
   return `https://t.me/${botUsername}?start=join_${code}`;
 }

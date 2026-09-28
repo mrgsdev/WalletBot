@@ -36,56 +36,49 @@ import workIcon from '../assets/categories/work.png';
 import taxiIcon from '../assets/categories/taxi.png';
 import wifiIcon from '../assets/categories/wifi.png';
 
-/**
- * Эмодзи категории → объёмная иконка.
- *
- * Устроено так же, как AccountIcon: иконка категории лежит в базе эмодзи,
- * менять данные ради оформления не нужно — подменяем только отрисовку.
- * Категории без картинки продолжают рисоваться эмодзи в тонированном кружке.
- */
 export const CATEGORY_ICON_IMAGES: Record<string, string> = {
-  '📶': wifiIcon,   // Интернет и связь
-  '🔁': phoneIcon,  // Подписки
-  '🛠': repairIcon,  // Ремонт и мебель
-  '🥡': takeawayIcon,  // Готовая еда/доставка
-  '🛡': insuranceIcon,  // Страховки
-  '🚗': carIcon,  // Обслуживание авто
-  '🚕': taxiIcon,  // Такси/транспорт
-  '🩺': healthIcon,  // Здоровье
-  '📚': educationIcon,  // Образование
-  '🎒': educationKidsIcon,  // Образование детей
-  '🧸': kidsIcon,  // Покупки детям
-  '🐾': petsIcon,  // Питомцы
-  '🎨': hobbyIcon,  // Хобби
-  '👕': clothesIcon,  // Личные вещи
-  '🏠': rentIcon,  // Квартплата
-  // Ключ из двух точек: ✈ + невидимый селектор варианта U+FE0F. Не «чистить».
-  '✈️': travelIcon,  // Путешествия и отдых
-  '🏦': bankFeesIcon,  // Банковское обслуживание
-  '🧴': householdIcon,  // Хозтовары
-  '🛒': groceriesIcon,  // Продукты
-  '🧾': taxesIcon,  // Налоги
-  '🍽': cafeIcon,  // Кафе и рестораны
-  '💊': pharmacyIcon,  // Аптечка
-  // ZWJ-последовательность: 🧑 + U+200D + ⚕ + U+FE0F. Соединитель невидим — не терять.
-  '🧑‍⚕️': healthKidsIcon,  // Здоровье детей
-  '💡': utilitiesIcon,  // Коммуналка
-  '🧰': workIcon,  // Сервисы для работы
-  '📣': adsIcon,  // Реклама
-  '🎁': otherIncomeIcon,  // Прочие доходы
-  '💼': salaryIcon,  // Зарплата
-  // ZWJ-последовательность: 🧑 + U+200D + 💻. Соединитель невидим — не терять.
-  '🧑‍💻': freelanceIcon,  // Подработка/фриланс
-  '💸': cashbackIcon,  // Кэшбеки и проценты
-  '📦': miscIcon,  // Разное
-  '🏗': constructionIcon,  // Стройка/крупный ремонт
-  '🎉': holidaysIcon,  // Праздники и подарки
-  // ❗ + невидимый селектор варианта U+FE0F.
-  '❗️': unplannedIcon,  // Незапланированное
-  '💅': beautyIcon,  // Уход за собой
-  // ⛽ + невидимый селектор варианта U+FE0F.
-  '⛽️': fuelIcon,  // Бензин
-  '🚨': finesIcon,  // Штрафы
+  '📶': wifiIcon,
+  '🔁': phoneIcon,
+  '🛠': repairIcon,
+  '🥡': takeawayIcon,
+  '🛡': insuranceIcon,
+  '🚗': carIcon,
+  '🚕': taxiIcon,
+  '🩺': healthIcon,
+  '📚': educationIcon,
+  '🎒': educationKidsIcon,
+  '🧸': kidsIcon,
+  '🐾': petsIcon,
+  '🎨': hobbyIcon,
+  '👕': clothesIcon,
+  '🏠': rentIcon,
+
+  '✈️': travelIcon,
+  '🏦': bankFeesIcon,
+  '🧴': householdIcon,
+  '🛒': groceriesIcon,
+  '🧾': taxesIcon,
+  '🍽': cafeIcon,
+  '💊': pharmacyIcon,
+
+  '🧑‍⚕️': healthKidsIcon,
+  '💡': utilitiesIcon,
+  '🧰': workIcon,
+  '📣': adsIcon,
+  '🎁': otherIncomeIcon,
+  '💼': salaryIcon,
+
+  '🧑‍💻': freelanceIcon,
+  '💸': cashbackIcon,
+  '📦': miscIcon,
+  '🏗': constructionIcon,
+  '🎉': holidaysIcon,
+
+  '❗️': unplannedIcon,
+  '💅': beautyIcon,
+
+  '⛽️': fuelIcon,
+  '🚨': finesIcon,
 };
 
 export function CategoryIcon({
@@ -97,26 +90,18 @@ export function CategoryIcon({
   bare = false,
 }: {
   icon: string;
-  /** Цвет категории — подложка под эмодзи. У картинок свой цвет, подложка им не нужна. */
+
   color?: string;
   className?: string;
   emojiClassName?: string;
-  /** Форма подложки под эмодзи: кружок в списках, сквиркл в строке операции. */
+
   rounded?: 'full' | 'squircle';
-  /** Эмодзи без собственной подложки — когда фон уже даёт родитель. */
+
   bare?: boolean;
 }) {
   const image = CATEGORY_ICON_IMAGES[icon];
 
   if (image) {
-    /*
-     * Эмодзи сидит в тонированном кружке с воздухом по краям, а картинка
-     * без отступа заняла бы ячейку целиком и выглядела бы крупнее соседей.
-     *
-     * Отступ задаём вложенным размером, а не padding в процентах: у padding
-     * проценты считаются от ширины РОДИТЕЛЯ, и в центрированном контейнере
-     * иконка схлопывалась почти в точку.
-     */
     return (
       <span className={`${className} flex shrink-0 items-center justify-center`}>
         <img src={image} alt="" className="h-[84%] w-[84%] object-contain" />

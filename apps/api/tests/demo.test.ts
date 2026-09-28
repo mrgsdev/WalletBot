@@ -12,7 +12,6 @@ let user: AuthUser;
 let scope: Scope;
 let cardId: number;
 
-/** Курсы фиксируем в базе, чтобы тесты не ходили во внешний API. */
 async function seedRates() {
   for (const [quote, rate] of Object.entries({ USD: 1, EUR: 0.9, RUB: 90 })) {
     await prisma.exchangeRate.upsert({
@@ -173,7 +172,7 @@ describe('clearDemo', () => {
     await clearDemo(user, scope);
 
     const card = await prisma.account.findUnique({ where: { id: cardId } });
-    // Осталась одна трата на 1000 при нулевом стартовом остатке.
+
     expect(card?.balance).toBe(-1000);
   });
 

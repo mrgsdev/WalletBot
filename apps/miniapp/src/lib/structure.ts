@@ -1,17 +1,10 @@
-/**
- * Структура периода: как доход разошёлся на расходы и накопления.
- *
- * Доли считаем от дохода, а не от «оборота». Оборот в API это
- * доход + расход + накопления, то есть ровно два дохода, поэтому доля
- * дохода в нём всегда выходила 50% — цифра, которая ничего не говорит.
- */
 export interface PeriodStructure {
   income: number;
   expense: number;
-  /** Доход минус расход. Отрицательное значение это перерасход. */
+
   savings: number;
   overspent: boolean;
-  /** Доли от дохода, в процентах. */
+
   expenseShare: number;
   savingsShare: number;
 }
@@ -22,7 +15,7 @@ function round2(value: number): number {
 
 export function periodStructure(income: number, expense: number): PeriodStructure {
   const savings = round2(income - expense);
-  // Без дохода считать долю не от чего: берём за единицу расход.
+
   const base = income > 0 ? income : expense;
   return {
     income,
@@ -40,7 +33,6 @@ export const STRUCTURE_COLORS = {
   savings: '#FFA640',
 } as const;
 
-/** Сколько дней периода уже прошло: для среднего расхода в день. */
 export function daysElapsed(
   mode: 'month' | 'year',
   year: number,

@@ -19,7 +19,6 @@ const ICON_CHOICES = [
   '✈️', '🎉', '📣', '🧰', '🧾', '❗️', '🏗', '📦', '💼', '🧑‍💻', '💸', '🎁',
 ];
 
-/** Управление категориями: создание, изменение иконки/цвета, архивация. */
 export function CategoriesScreen() {
   const navigate = useNavigate();
   const budgetId = useAppStore((s) => s.budgetId);
@@ -52,11 +51,6 @@ export function CategoriesScreen() {
     return [...map.entries()];
   }, [list]);
 
-  /*
-   * Группы для выбора собираем из активных категорий текущего типа:
-   * в режиме архива `list` содержит только спрятанное, и полный набор
-   * групп по нему не восстановить.
-   */
   const groups = useMemo(() => {
     const seen = new Set<string>();
     for (const category of active.data ?? []) seen.add(category.group ?? 'Прочее');
@@ -191,7 +185,7 @@ function CategoryEditor({
   open: boolean;
   category: CategoryDto | null;
   defaultType: 'expense' | 'income';
-  /** Группы, в которые можно положить категорию. */
+
   groups: string[];
   onClose: () => void;
 }) {
@@ -248,7 +242,6 @@ function CategoryEditor({
     try {
       const result = await remove.mutateAsync(category.id);
       if (result.archived) {
-        // На категорию ссылаются операции — сервер её не удалил.
         tg.haptic.warning();
         setConfirmDelete(false);
         setError('В категории есть операции, удалить нельзя. Она осталась в архиве.');
@@ -382,7 +375,6 @@ function CategoryEditor({
           </button>
         )}
 
-        {/* Удаление предлагаем только из архива: сначала убрать с глаз, потом решать. */}
         {category?.isArchived && !confirmDelete && (
           <button
             type="button"

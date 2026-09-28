@@ -3,11 +3,6 @@ import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
 import path from 'node:path';
 
-/**
- * Читаем нужные переменные из корневого .env вручную.
- * loadEnv() здесь не подходит: он подхватывает NODE_ENV из .env и продакшен-сборка
- * начинает включать development-версию React.
- */
 function readRootEnv(keys: string[]): Record<string, string> {
   const file = path.resolve(process.cwd(), '../../.env');
   const out: Record<string, string> = {};
@@ -33,8 +28,6 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       {
-        // Подставляем название в <title>: в репозитории лежит плейсхолдер,
-        // конкретное имя приходит из VITE_APP_NAME при сборке.
         name: 'app-name-html',
         transformIndexHtml: (html) => html.replace(/%VITE_APP_NAME%/g, appName),
       },
@@ -48,7 +41,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       host: true,
-      // Разрешаем открывать dev-сервер через ngrok/cloudflare-туннель.
+
       allowedHosts: true,
       proxy: {
         '/api': { target: apiTarget, changeOrigin: true },
@@ -56,7 +49,6 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      // Название доступно и в коде — через import.meta.env.VITE_APP_NAME.
       'import.meta.env.VITE_APP_NAME': JSON.stringify(appName),
     },
     build: {
@@ -64,7 +56,6 @@ export default defineConfig(({ mode }) => {
       sourcemap: mode !== 'production',
       rollupOptions: {
         output: {
-          // Вендорные библиотеки отдельными чанками — кэшируются между релизами.
           manualChunks: {
             react: ['react', 'react-dom', 'react-router-dom'],
             motion: ['framer-motion'],
